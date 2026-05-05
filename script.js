@@ -143,6 +143,21 @@
     buildChatWidget();
   }
 
+  // Lazy-load the LightWidget resizer script when the IG iframe nears viewport
+  const igFrame = document.querySelector('iframe.lightwidget-widget');
+  if (igFrame && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries, obs) => {
+      if (entries[0].isIntersecting) {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.lightwidget.com/widgets/lightwidget.js';
+        s.async = true;
+        document.body.appendChild(s);
+        obs.disconnect();
+      }
+    }, { rootMargin: '400px' });
+    io.observe(igFrame);
+  }
+
   // Smooth-scroll for in-page anchors
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {
