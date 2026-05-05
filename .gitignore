@@ -15,6 +15,9 @@ Thumbs.db
 .surge/
 CNAME
 
+# Local-only operational docs
+CLAUDE.md
+
 # Build / cache
 node_modules/
 .cache/
