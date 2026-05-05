@@ -97,9 +97,11 @@
         </div>
       </div>
 
-      <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/contact.html?sent=1" style="background: var(--bone-deep); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
-        <input type="hidden" name="form-name" value="contact" />
-        <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+      <form method="POST" action="https://formsubmit.co/info@mosaicclimbing.com" style="background: var(--bone-deep); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
+        <input type="hidden" name="_subject" value="Contact form — mosaicclimbing.com" />
+        <input type="hidden" name="_captcha" value="true" />
+        <input type="hidden" name="_next" value="https://www.mosaicclimbing.com/contact?sent=1" />
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
         <div style="display: grid; gap: var(--s-4); grid-template-columns: 1fr 1fr;">
           <div class="field"><label for="first">First name</label><input class="input" id="first" name="first" type="text" autocomplete="given-name" required /></div>
           <div class="field"><label for="last">Last name</label><input class="input" id="last" name="last" type="text" autocomplete="family-name" required /></div>

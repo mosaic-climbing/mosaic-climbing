@@ -338,9 +338,11 @@
         <h2>Tell us about your group.</h2>
         <p class="mt-5">Booking a group event? <a href="mailto:nicole@mosaicclimbing.com?subject=Group%20Booking%20Inquiry" style="color: var(--bone); border-bottom: 1px solid var(--bone); padding-bottom: 2px; text-decoration: none;">Email Nicole directly</a> &mdash; or use the form to start a conversation.</p>
       </div>
-      <form name="booking" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/booking.html?sent=1#inquire" style="background: var(--bone); color: var(--ink); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
-        <input type="hidden" name="form-name" value="booking" />
-        <p hidden><label>Don't fill this out: <input name="bot-field" /></label></p>
+      <form method="POST" action="https://formsubmit.co/nicole@mosaicclimbing.com" style="background: var(--bone); color: var(--ink); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
+        <input type="hidden" name="_subject" value="Group booking inquiry — mosaicclimbing.com" />
+        <input type="hidden" name="_captcha" value="true" />
+        <input type="hidden" name="_next" value="https://www.mosaicclimbing.com/booking?sent=1#inquire" />
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
         <div class="field"><label for="name">Name</label><input class="input" id="name" name="name" type="text" autocomplete="name" required /></div>
         <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" autocomplete="email" required /></div>
         <div class="field"><label for="phone">Phone</label><input class="input" id="phone" name="phone" type="tel" autocomplete="tel" /></div>
