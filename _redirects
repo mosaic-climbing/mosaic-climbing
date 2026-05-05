@@ -11,5 +11,5 @@
 /waiver           /waiver.html           200
 /events           /calendar.html         301
 
-# Catch-all
-/*  /404.html  404
+# Note: Cloudflare Pages auto-serves /404.html when no route matches.
+# (Netlify required an explicit /* → /404.html 404 entry; CF rejects 404 as a status.)
