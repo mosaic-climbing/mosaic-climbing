@@ -1,15 +1,6 @@
-# Clean URLs — let visitors hit /about instead of /about.html
-/about            /about.html            200
-/booking          /booking.html          200
-/calendar         /calendar.html         200
-/careers          /careers.html          200
-/climb-with-us    /climb-with-us.html    200
-/contact          /contact.html          200
-/membership       /membership.html       200
-/route-setter     /route-setter.html     200
-/youth-coach      /youth-coach.html      200
-/waiver           /waiver.html           200
-/events           /calendar.html         301
+# Cloudflare Workers Assets handles clean URLs automatically:
+# /about.html → 307 redirect to /about, /about → serves about.html.
+# Don't add /<route> → /<route>.html 200 entries here — they cause loops.
 
-# Note: Cloudflare Pages auto-serves /404.html when no route matches.
-# (Netlify required an explicit /* → /404.html 404 entry; CF rejects 404 as a status.)
+# Aliases
+/events           /calendar              301
