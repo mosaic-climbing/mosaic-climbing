@@ -22,3 +22,8 @@ CLAUDE.md
 node_modules/
 .cache/
 .netlify/
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
