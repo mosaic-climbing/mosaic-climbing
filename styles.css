@@ -375,11 +375,15 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
   display: flex; flex-direction: column;
   isolation: isolate;
 }
-.photo-hero > img {
+.photo-hero > picture {
   position: absolute; inset: 0;
+  display: block;
+  z-index: 0;
+}
+.photo-hero > picture > img,
+.photo-hero > img {
   width: 100%; height: 100%;
   object-fit: cover; object-position: center 30%;
-  z-index: 0;
   filter: saturate(0.96) contrast(1.04) brightness(0.66);
 }
 .photo-hero::after {
@@ -1032,6 +1036,7 @@ h3 {
 
 /* Photos — cinematic grade, slight cool shadows + warm mid */
 .img img,
+.photo-hero > picture > img,
 .photo-hero > img,
 .page-hero-photo > img,
 .hero-promo__img img {
@@ -1046,6 +1051,7 @@ h3 {
   grid-template-rows: 1fr auto;
   align-items: end;
 }
+.photo-hero > picture > img,
 .photo-hero > img {
   object-position: center 55%;
   filter: saturate(1.0) contrast(1.05) brightness(1.0);
