@@ -1,156 +1,105 @@
-# Mosaic Climbing — static site
+# Mosaic Climbing — static marketing site
 
-A complete, mobile-first, accessible website for **mosaicclimbing.com**. Pure HTML, CSS, and one tiny vanilla-JS file. No build step, no framework, deploys to any static host.
+The website for [Mosaic Climbing](https://www.mosaicclimbing.com), an indoor climbing gym in Loveland, Ohio (greater Cincinnati). Replaces the existing Wix site.
 
-Copy is sourced verbatim from the live mosaicclimbing.com (prices, programs, FAQs, founder bio, job descriptions). Design is editorial / typographic — Fraunces (variable, with opsz + SOFT axes) for display, Inter for body, on a warm bone palette with terracotta and a deep forest accent.
+Plain HTML + one CSS file + one JS file. No framework, no build step, no `package.json`.
 
-## What's here
+## Live URLs
+
+- **Production target**: `mosaicclimbing.com` (still served by Wix during the transition)
+- **Preview**: `https://mosaic-preview.surge.sh` (Surge — temporary, retiring once Netlify is wired up)
+- **Repo**: `mosaic-climbing/mosaic-climbing` on GitHub
+
+## Stack
+
+- HTML/CSS/JS, no build tool
+- **Hosting target**: Netlify (auto-deploy from `main`)
+- **Forms**: Netlify Forms — `contact.html` and `booking.html` are wired with `data-netlify` + honeypot
+- **Fonts**: League Spartan (display) + Inter (body) + JetBrains Mono (numerics) from Google Fonts
+- **No JS framework**. `script.js` handles mobile-nav toggle, sticky-header scroll state, `aria-current` on nav, year auto-fill, and an injected chat bubble
+
+## Pages
 
 ```
-mosaic-climbing/
-├── index.html              # Home — typographic hero, "We Are Mosaic", disciplines, visit
-├── about.html              # Bouldering / Ropes / Fitness, classes, FAQ
-├── booking.html            # Youth + adult instruction, parties, groups, inquiry form
-├── membership.html         # Real prices ($45/$55, $75/$90), benefits comparison table
-├── climb-with-us.html      # Purchase hub — links to portal.mosaicclimbing.com
-├── calendar.html           # Featured events + portal calendar link
-├── careers.html            # Founder bio + open roles
-├── route-setter.html       # Full job post (verbatim)
-├── youth-coach.html        # Full job post (verbatim)
-├── contact.html            # Address, hours, contact form
-├── waiver.html             # Auto-redirects to portal waiver
-├── 404.html                # "Looks like you took a fall."
-├── styles.css              # Whole design system, one file
-├── script.js               # Mobile nav, sticky header, year, smooth-scroll, contact chat widget
-├── sitemap.xml             # SEO
-└── robots.txt              # SEO
+index.html              home — hero, disciplines, visit, programs intro
+about.html              about / disciplines (bouldering, ropes, fitness) / FAQ
+booking.html            group events + youth/adult instruction + inquiry form
+membership.html         adult / youth memberships + benefits comparison
+calendar.html           events + link to portal calendar
+contact.html            address, phone, contact form
+careers.html            roles overview
+route-setter.html       route setter job page
+youth-coach.html        youth coach job page
+climb-with-us.html      day passes / memberships / gift cards (links to portal)
+404.html                error page
+waiver.html             redirect to portal waiver
 ```
 
-## Design notes
+Plus `sitemap.xml`, `robots.txt`, `llms.txt`, `netlify.toml`, `_redirects`, favicons.
 
-- **Type:** Fraunces variable serif (with `opsz` 9–144 and `SOFT` 0–100 axes — used at different display sizes for editorial feel) + Inter variable for body. Display italic in Fraunces is the brand's "voice" and is reserved for the wordmark + emphasis.
-- **Color:** bone (`#f3ecdd`), ink (`#161310`), clay (`#c4421f` — terracotta, the accent that owns the Visit and Inquiry sections), forest (`#232a26` — deep, used once per page max). No dusty pink.
-- **Sections:** sized differently across each page to break out of the "card grid in a box" trap. Asymmetric 4/8 and 5/7 column splits, full-width clay and forest section bands, and a typographic hero with no image on the home page.
-- **Components:** square buttons (2px radius), no hover-lift on cards, `tnum` figures on every price, real comparison tables instead of three-card grids when comparing options.
-- **Chat widget:** auto-injected by `script.js` on every page (bottom right). Click opens a small contact panel with name/email/message → opens user's email client to `hello@mosaicclimbing.com`. To wire to a real backend, edit the `TO` constant + `submit` handler in `script.js`.
-
-## View it locally
-
-Any static server works. From the project folder:
+## Local dev
 
 ```bash
-# Python
 python3 -m http.server 8000
-# Node
-npx serve
 ```
 
-Then open <http://localhost:8000>.
+Then open <http://localhost:8000>. Any static server works.
 
 ## Deploy
 
-The site is just static files. Pick one:
+Netlify auto-deploys on every push to `main`:
 
-### Netlify (drag-and-drop, ~30 seconds)
-1. Go to <https://app.netlify.com/drop>
-2. Drag the `mosaic-climbing/` folder onto the page.
-3. Done — you get a `xxxxxx.netlify.app` URL immediately.
-4. To use `mosaicclimbing.com`: Netlify dashboard → **Domain settings** → **Add custom domain** → follow DNS instructions.
+1. Connect the repo at <https://app.netlify.com> → "Add new site" → "Import from GitHub" → pick `mosaic-climbing/mosaic-climbing`.
+2. Build settings come from `netlify.toml` — publish dir `.`, no build command.
+3. Custom domain: Netlify dashboard → **Domain settings** → **Add custom domain** → `mosaicclimbing.com`. Update DNS at the registrar to point at Netlify.
 
-### Cloudflare Pages
-1. Push to GitHub/GitLab.
-2. <https://dash.cloudflare.com/> → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**.
-3. Build command: empty. Output directory: `/`.
-4. Add custom domain in Pages settings.
+PRs auto-generate preview URLs.
 
-### Vercel
-1. Push to Git.
-2. <https://vercel.com/new> → import → **Deploy**. No build command.
+## Workflow
 
-### GitHub Pages
-1. Push to a repo. **Settings → Pages** → `main` branch, `/` root.
-2. Custom domain via the same settings.
+This site is maintained collaboratively with Claude. The flow:
 
----
+1. Owner messages Claude what to change.
+2. Claude edits files, commits to `main`, pushes.
+3. Netlify auto-deploys in ~30 seconds.
+4. Rollback = one click in the Netlify dashboard.
 
-## Real copy already in. Things still to wire up.
+## Cache busting
 
-The site uses real copy from mosaicclimbing.com — verbatim where it exists. A few items still need attention:
+`styles.css` is referenced as `styles.css?v=N` from every page. Bump `N` across all HTML files when the CSS changes:
 
-| File | What to do |
-|---|---|
-| `booking.html` | Wire the inquiry form to a real backend (Formspree / Netlify Forms / your own). Currently uses `mailto:` as a fallback. |
-| `contact.html` | Same — wire form. Also drop a Google Maps embed in the placeholder image block. |
-| `script.js` | Update the chat widget's `TO` constant from `hello@mosaicclimbing.com` if you'd rather route to `nicole@…` or set up `info@…`. |
-| `index.html`, etc. | Drop in real photography. The CSS uses flat clay/forest blocks instead of "Photo" placeholders — they're stylistic, not unfinished, but real photos will obviously be better. See "Pulling images" below. |
-
-Search for `TODO` to find the remaining items:
 ```bash
-grep -rn TODO .
+for f in *.html; do sed -i '' 's/styles\.css?v=29/styles.css?v=30/g' "$f"; done
 ```
 
-Currently: 4 TODOs across the project.
+Once on Netlify, this becomes optional — Netlify's `Cache-Control` headers (set in `netlify.toml`) handle it.
 
----
+## SEO + AI discoverability
 
-## Pulling images from the Wix CDN
+- Per-page unique `<title>`, `<meta description>`, canonical, OG, Twitter Card
+- JSON-LD on every page: `SportsActivityLocation` (with `paymentAccepted`, `areaServed`, `hasMap`, etc.). Home adds `WebSite` + 3 `Service` blocks. Booking adds `makesOffer`. About adds `FAQPage`. Calendar adds `Event` for the Summer Camp.
+- `llms.txt` at root for LLM crawlers
+- Page-specific OG images (each page's social preview matches its hero photo)
 
-Wix hosts site media on `static.wixstatic.com`. For each image you want to keep:
+## Accessibility
 
-1. Open the live mosaicclimbing.com page in Chrome.
-2. Right-click the image → **Open image in new tab** (or DevTools → Network → Img).
-3. Strip the resize params: keep the part before `/v1/fill`. e.g. `https://static.wixstatic.com/media/xyz123.jpg`
-4. `curl -O https://static.wixstatic.com/media/xyz123.jpg`
-5. Drop in `images/`, rename descriptively, reference from HTML.
+axe-core WCAG 2.1 AA — **zero violations** across all 9 main pages. Includes:
 
-Then replace any `<div class="img …"></div>` block with:
+- Semantic landmarks
+- Skip-to-content link
+- Visible focus rings
+- Logical heading order (one `<h1>` per page)
+- All form inputs labelled
+- `aria-current="page"` on active nav link
+- `prefers-reduced-motion` honored
 
-```html
-<div class="img img-portrait">
-  <img src="images/your-photo.jpg" alt="Descriptive alt text" loading="lazy" />
-</div>
-```
+## Don't
 
-Recommended sizes: hero 1600×2000 (4:5), section 1200×900 (4:3), bleed 2400×1000 (21:9). Export at 80% JPEG.
-
----
-
-## Forms — wiring them up
-
-The booking, contact, and chat forms currently use `mailto:` fallbacks so they don't break on first deploy. Pick a real handler:
-
-- **Netlify Forms** — add `data-netlify="true"` and a hidden `form-name` input.
-- **Formspree** — set `action="https://formspree.io/f/YOUR_ID"`.
-- **Basin / Web3Forms** — similar pattern.
-- **Your own backend** — happy to write a small Go handler.
-
----
-
-## Accessibility checklist (built in)
-
-- ✅ Semantic landmarks (`<header>`, `<nav>`, `<main>`, `<footer>`, `<article>`, `<section>`)
-- ✅ Skip-to-content link on every page
-- ✅ Logical heading hierarchy
-- ✅ AA color contrast across all text + accent uses
-- ✅ Visible focus rings on every interactive element
-- ✅ Mobile menu fully keyboard-accessible (Esc to close, focus management)
-- ✅ All form inputs have proper `<label>` association
-- ✅ `aria-current="page"` on the active nav link (set by JS)
-- ✅ `prefers-reduced-motion` honored
-- ✅ Print stylesheet
-- ✅ Tabular figures on all numeric data
-- ✅ Touch targets ≥ 44×44 px
-
-Run a Lighthouse audit on the deployed site — should land 95+ on Accessibility.
-
----
-
-## Browser support
-
-Modern evergreen browsers. Uses `clamp()`, custom properties, CSS Grid, and variable font axes — all baseline-supported.
-
----
+- Don't add a build step or framework.
+- Don't add tracking / analytics scripts without asking.
+- Don't change navigation order (About / Booking / Membership / Calendar / Contact / Climb With Us).
+- Don't replace the Instagram embed (LightWidget) without asking — owner controls it.
 
 ## License
 
-All copy belongs to Mosaic Climbing. Fonts (Fraunces, Inter) loaded from Google Fonts under their open licenses. No third-party JS dependencies.
+All site copy and photos belong to Mosaic Climbing. Fonts loaded from Google Fonts under their open licenses.
