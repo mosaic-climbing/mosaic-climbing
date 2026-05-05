@@ -1,0 +1,21 @@
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Surge artifacts (local-only, Netlify uses its own domain config)
+.surge/
+CNAME
+
+# Build / cache
+node_modules/
+.cache/
+.netlify/

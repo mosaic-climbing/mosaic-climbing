@@ -1,0 +1,15 @@
+# Clean URLs — let visitors hit /about instead of /about.html
+/about            /about.html            200
+/booking          /booking.html          200
+/calendar         /calendar.html         200
+/careers          /careers.html          200
+/climb-with-us    /climb-with-us.html    200
+/contact          /contact.html          200
+/membership       /membership.html       200
+/route-setter     /route-setter.html     200
+/youth-coach      /youth-coach.html      200
+/waiver           /waiver.html           200
+/events           /calendar.html         301
+
+# Catch-all
+/*  /404.html  404
