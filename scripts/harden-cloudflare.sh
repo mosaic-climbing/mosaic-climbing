@@ -111,6 +111,52 @@ bfm_ok=$(echo "$bfm_resp" | python3 -c 'import sys,json; print(json.load(sys.std
 if [[ "$bfm_ok" == "True" ]]; then echo "  ✓ bot_fight_mode"; else echo "  ✗ bot_fight_mode — $(echo "$bfm_resp" | head -c 200)"; fi
 
 echo
+echo "→ Adding www → apex 301 redirect rule"
+# Cloudflare's modern Redirect Rules live in the http_request_dynamic_redirect
+# phase ruleset. Idempotent: GET existing rules, drop any prior rule with our
+# description, append our rule, PUT the whole thing back.
+
+REDIRECT_DESC="www to apex (301) — auto-managed by harden-cloudflare.sh"
+REDIRECT_PHASE_URL="$API/zones/$ZONE_ID/rulesets/phases/http_request_dynamic_redirect/entrypoint"
+
+current_rules=$(curl -sS "${auth[@]}" "$REDIRECT_PHASE_URL" \
+  | python3 -c 'import sys,json; r=json.load(sys.stdin); print(json.dumps(r.get("result",{}).get("rules",[])))')
+
+# Build the new rule list: existing rules minus any prior www→apex, plus our rule.
+new_payload=$(python3 - "$current_rules" "$REDIRECT_DESC" "$ZONE_NAME" <<'PY'
+import json, sys
+existing = json.loads(sys.argv[1] or "[]")
+desc = sys.argv[2]
+zone = sys.argv[3]
+filtered = [r for r in existing if r.get("description") != desc]
+filtered.append({
+    "action": "redirect",
+    "expression": f'(http.host eq "www.{zone}")',
+    "description": desc,
+    "enabled": True,
+    "action_parameters": {
+        "from_value": {
+            "status_code": 301,
+            "target_url": {
+                "expression": f'concat("https://{zone}", http.request.uri.path)'
+            },
+            "preserve_query_string": True
+        }
+    }
+})
+print(json.dumps({"rules": filtered}))
+PY
+)
+
+rr_resp=$(curl -sS -X PUT "${auth[@]}" --data "$new_payload" "$REDIRECT_PHASE_URL")
+rr_ok=$(echo "$rr_resp" | python3 -c 'import sys,json; print(json.load(sys.stdin).get("success",False))')
+if [[ "$rr_ok" == "True" ]]; then
+  echo "  ✓ www.$ZONE_NAME → $ZONE_NAME (301)"
+else
+  echo "  ✗ redirect rule — $(echo "$rr_resp" | head -c 200)"
+fi
+
+echo
 echo "→ Verifying critical settings"
 verify_setting () {
   local id="$1" expect="$2"
