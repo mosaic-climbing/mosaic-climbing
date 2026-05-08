@@ -429,3 +429,58 @@ DAY 5-7:  Phase 4.3   Transfer completes (passive)
 ```
 
 You've got this.
+
+---
+
+## ⚠️ Variant: Wix won't let you change nameservers (transfer-first path)
+
+If Wix locks nameserver editing once a transfer is initiated (which is common — they cut you off from DNS controls during outbound transfer), the order flips. The site stays on Wix until the transfer completes; once Dreamhost takes ownership, you change nameservers there, and Cloudflare activates.
+
+```
+T-7 days: Phase 1.2   QA new site, activate FormSubmit
+          Phase 1.3   Add domain to Cloudflare → "pending" state
+                      (Cloudflare zone never activates while Wix is
+                       authoritative — that's expected and fine)
+          Phase 1.4   Add SPF + DMARC TXT records in CF (queued)
+          Phase 1.5   Get EPP code from Wix
+          Phase 4.1   Initiate transfer Wix → Dreamhost
+          Phase 4.2   Approve transfer emails
+
+DAYS 1-6: Wait for transfer to complete (passive). Site stays on Wix.
+          Email keeps working. Cloudflare zone stays "pending."
+          Use this time to:
+            - Add CLOUDFLARE_API_TOKEN to GitHub secrets (Phase 2.5)
+            - Test all forms one more time on workers.dev
+            - Confirm the imported DNS records in Cloudflare again,
+              especially MX
+
+T (transfer completes — you'll get a Dreamhost email):
+          • At Dreamhost: Domain Settings → Nameservers → change from
+            Dreamhost's defaults to your two Cloudflare nameservers.
+            Save.
+          • Wait 5–60 min. Cloudflare detects authority, flips zone
+            to "Active," emails you.
+          • Phase 2.3   Add custom domain in Workers project
+          • Phase 2.4   Test site + email
+          • Phase 2.5   Run hardening GitHub Action
+          • Phase 3     Submit to Search Console
+          • Phase 4.5   Cancel Wix subscription
+```
+
+**While you wait** (T-7 to T):
+
+- [ ] **Verify MX records imported** in Cloudflare DNS (Phase 1.3 checklist) — last chance to catch a missing one before email matters.
+- [ ] **Add CLOUDFLARE_API_TOKEN to GitHub secrets** so the hardening Action runs the moment Cloudflare goes Active. Permissions: `Zone Settings: Edit + Zone: Read + Account Rulesets: Edit`, scoped to `mosaicclimbing.com`. Add at https://github.com/mosaic-climbing/mosaic-climbing/settings/secrets/actions.
+- [ ] **Test every form one more time** at https://mosaic-climbing.chris-shotwell.workers.dev — and click the FormSubmit confirmation email at `info@mosaicclimbing.com` so the first real submission post-cutover works without a hiccup.
+- [ ] **Verify the EPP transfer code worked** — Dreamhost should show the transfer "In Progress" with an expected completion date. If Dreamhost shows "Failed" or asks for a fresh code, get one from Wix again.
+- [ ] **Don't lower TTL at Wix** — you can't (Wix has locked DNS) and it doesn't matter; nameserver propagation runs on a different timer than record TTLs.
+
+**The moment Dreamhost emails "transfer complete":**
+
+1. Sign in to Dreamhost panel → **Domains → Manage Domains** → `mosaicclimbing.com` → **DNS** or **Nameservers**.
+2. Some Dreamhost flows default to Dreamhost nameservers (`ns1.dreamhost.com` etc.) immediately on transfer-in. **Change to Cloudflare's two nameservers** from your Cloudflare zone's Overview page. Save.
+3. Run `dig NS mosaicclimbing.com +short` until it returns Cloudflare names (5–60 min).
+4. Cloudflare emails "Site is now active."
+5. Continue from Phase 2.3 in the main guide.
+
+**Risk note:** during the registrar transfer (Days 1–6), DNS authority stays with Wix. Wix is still hosting the site and serving DNS. Don't cancel Wix yet — wait until Phase 4.5.
