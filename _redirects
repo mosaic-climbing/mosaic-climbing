@@ -12,8 +12,6 @@
 /events            /calendar     301
 /youth-classes     /booking      301
 
-# WWW canonicalization — both apex and www serve content identically,
-# but search engines prefer one. Pick apex (mosaicclimbing.com) as
-# canonical. (Cloudflare also handles this at the domain level once the
-# custom domain is wired up; this is a belt-and-suspenders fallback.)
-https://www.mosaicclimbing.com/*  https://mosaicclimbing.com/:splat  301!
+# Note: www → apex canonicalization is handled at the Cloudflare domain
+# level (Rules → Redirect Rules) once the custom domain is wired up
+# post-cutover. _redirects only accepts relative paths, not cross-host.
