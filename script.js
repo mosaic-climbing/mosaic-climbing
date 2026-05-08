@@ -48,8 +48,10 @@
   // ---------- Chat / contact widget (auto-injected on every page) ----------
   function buildChatWidget() {
     if (document.querySelector('[data-chat-fab]')) return; // already present
-    
-    const TO = 'hello@mosaicclimbing.com';
+
+    // Submissions land in nicole@mosaicclimbing.com via FormSubmit's AJAX endpoint
+    const ENDPOINT = 'https://formsubmit.co/ajax/nicole@mosaicclimbing.com';
+    const FALLBACK_EMAIL = 'nicole@mosaicclimbing.com';
 
     const fab = document.createElement('button');
     fab.type = 'button';
@@ -92,7 +94,8 @@
           <button type="submit" class="btn btn-primary">Send</button>
         </div>
       </form>
-      <p class="alt mt-3" data-chat-success hidden>Thanks — opening your email client now. If nothing happens, email us directly at <a href="mailto:${TO}">${TO}</a>.</p>
+      <p class="alt mt-3" data-chat-success hidden>Thanks — Nicole will get back to you within a day. For anything urgent, email <a href="mailto:${FALLBACK_EMAIL}">${FALLBACK_EMAIL}</a> or call <a href="tel:+15137814083">513&middot;781&middot;4083</a>.</p>
+      <p class="alt mt-3" data-chat-error hidden>Something went wrong sending that. Please email <a href="mailto:${FALLBACK_EMAIL}">${FALLBACK_EMAIL}</a> directly.</p>
     `;
 
     document.body.append(fab, panel);
@@ -120,7 +123,8 @@
 
     const form = panel.querySelector('[data-chat-form]');
     const success = panel.querySelector('[data-chat-success]');
-    form.addEventListener('submit', (e) => {
+    const errorEl = panel.querySelector('[data-chat-error]');
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const data = new FormData(form);
       const name = (data.get('name') || '').toString().trim();
@@ -130,11 +134,33 @@
         form.querySelectorAll(':invalid').forEach((el) => el.style.borderColor = 'var(--clay)');
         return;
       }
-      const subject = `Question from ${name}`;
-      const body = `${msg}\n\n— ${name}\n${email}`;
-      const url = `mailto:${TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      window.location.href = url;
-      success.hidden = false;
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalLabel = submitBtn.textContent;
+      submitBtn.textContent = 'Sending…';
+      submitBtn.disabled = true;
+      errorEl.hidden = true;
+
+      try {
+        const response = await fetch(ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            name,
+            email,
+            message: msg,
+            _subject: `Chat widget — message from ${name}`,
+            _template: 'table',
+          }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        form.style.display = 'none';
+        success.hidden = false;
+      } catch (err) {
+        submitBtn.textContent = originalLabel;
+        submitBtn.disabled = false;
+        errorEl.hidden = false;
+      }
     });
   }
   if (document.readyState === 'loading') {
