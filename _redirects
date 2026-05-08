@@ -1,6 +1,19 @@
 # Cloudflare Workers Assets handles clean URLs automatically:
-# /about.html → 307 redirect to /about, /about → serves about.html.
+# /about.html → 307 redirect to /about, and /about serves about.html.
 # Don't add /<route> → /<route>.html 200 entries here — they cause loops.
 
-# Aliases
-/events           /calendar              301
+# Legacy Wix URL paths → new clean URLs (301 permanent redirect)
+# When mosaicclimbing.com cuts over from Wix to Cloudflare, search-engine
+# results, social shares, and old bookmarks for these paths will land on
+# the right pages with full SEO credit transferred.
+/the-experience    /about        301
+/instruction       /booking      301
+/details           /about        301
+/events            /calendar     301
+/youth-classes     /booking      301
+
+# WWW canonicalization — both apex and www serve content identically,
+# but search engines prefer one. Pick apex (mosaicclimbing.com) as
+# canonical. (Cloudflare also handles this at the domain level once the
+# custom domain is wired up; this is a belt-and-suspenders fallback.)
+https://www.mosaicclimbing.com/*  https://mosaicclimbing.com/:splat  301!
