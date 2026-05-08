@@ -49,9 +49,9 @@
   function buildChatWidget() {
     if (document.querySelector('[data-chat-fab]')) return; // already present
 
-    // Submissions land in nicole@mosaicclimbing.com via FormSubmit's AJAX endpoint
-    const ENDPOINT = 'https://formsubmit.co/ajax/nicole@mosaicclimbing.com';
-    const FALLBACK_EMAIL = 'nicole@mosaicclimbing.com';
+    // Submissions land in info@mosaicclimbing.com via FormSubmit's AJAX endpoint
+    const ENDPOINT = 'https://formsubmit.co/ajax/info@mosaicclimbing.com';
+    const FALLBACK_EMAIL = 'info@mosaicclimbing.com';
 
     const fab = document.createElement('button');
     fab.type = 'button';

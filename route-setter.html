@@ -137,16 +137,25 @@
     </div>
   </section>
 
-  <section class="section-tight section-ink">
-    <div class="wrap cols cols-2-equal" style="align-items: end;">
+  <section class="section section-ink" id="apply">
+    <div class="wrap cols cols-5-7">
       <div>
-        <h3>Send a personal essay and résumé</h3>
-        <p class="mt-3">Email Nicole directly.</p>
+        <h2>Apply</h2>
+        <p class="mt-5">Tell us why you want to set at Mosaic. Include a link to a portfolio of your work if you've got one. Nicole reads every application herself.</p>
+        <p class="mt-5"><a href="careers.html" style="color: var(--bone); border-bottom: 1px solid var(--bone); padding-bottom: 2px; text-decoration: none;">Browse all open roles</a></p>
       </div>
-      <div class="actions">
-        <a href="mailto:nicole@mosaicclimbing.com?subject=Route%20Setter%20application" class="btn btn-on-dark btn-lg btn-arrow">nicole@mosaicclimbing.com</a>
-        <a href="careers.html" class="btn btn-on-dark-ghost btn-lg">All roles</a>
-      </div>
+      <form method="POST" action="https://formsubmit.co/info@mosaicclimbing.com" style="background: var(--bone); color: var(--ink); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
+        <input type="hidden" name="_subject" value="Route Setter application — mosaicclimbing.com" />
+        <input type="hidden" name="_captcha" value="true" />
+        <input type="hidden" name="_next" value="https://www.mosaicclimbing.com/route-setter?sent=1#apply" />
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
+        <div class="field"><label for="rs-name">Name</label><input class="input" id="rs-name" name="name" type="text" autocomplete="name" required /></div>
+        <div class="field"><label for="rs-email">Email</label><input class="input" id="rs-email" name="email" type="email" autocomplete="email" required /></div>
+        <div class="field"><label for="rs-phone">Phone (optional)</label><input class="input" id="rs-phone" name="phone" type="tel" autocomplete="tel" /></div>
+        <div class="field"><label for="rs-portfolio">Link to portfolio or recent sets (optional)</label><input class="input" id="rs-portfolio" name="portfolio" type="url" placeholder="https://..." /></div>
+        <div class="field"><label for="rs-essay">Your essay</label><textarea class="textarea" id="rs-essay" name="message" placeholder="Why do you want to set at Mosaic? What's your setting experience? Anything else we should know." required></textarea></div>
+        <button type="submit" class="btn btn-primary btn-lg btn-arrow">Send to Nicole</button>
+      </form>
     </div>
   </section>
 
@@ -202,6 +211,6 @@
   </div>
 </footer>
 
-<script src="script.js?v=2" defer></script>
+<script src="script.js?v=3" defer></script>
 </body>
 </html>
