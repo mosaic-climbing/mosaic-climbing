@@ -184,6 +184,36 @@
     io.observe(igFrame);
   }
 
+  // Lazy-load Flodesk embed when footer signup nears viewport
+  const fdContainer = document.getElementById('fd-form-6a03e08e8ccae7375c1b4c77');
+  if (fdContainer && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries, obs) => {
+      if (!entries[0].isIntersecting) return;
+      (function (w, d, t, h, s, n) {
+        w.FlodeskObject = n;
+        var fn = function () { (w[n].q = w[n].q || []).push(arguments); };
+        w[n] = w[n] || fn;
+        var f = d.getElementsByTagName(t)[0];
+        var v = '?v=' + Math.floor(new Date().getTime() / (120 * 1000)) * 60;
+        var sm = d.createElement(t);
+        sm.async = true; sm.type = 'module';
+        sm.src = h + s + '.mjs' + v;
+        f.parentNode.insertBefore(sm, f);
+        var sn = d.createElement(t);
+        sn.async = true; sn.noModule = true;
+        sn.src = h + s + '.js' + v;
+        f.parentNode.insertBefore(sn, f);
+      })(window, document, 'script', 'https://assets.flodesk.com', '/universal', 'fd');
+      window.fd('form', {
+        formId: '6a03e08e8ccae7375c1b4c77',
+        containerEl: '#fd-form-6a03e08e8ccae7375c1b4c77',
+      });
+      obs.disconnect();
+    }, { rootMargin: '400px' });
+    // Observe the parent column (the embed container itself has 0 height until Flodesk fills it)
+    io.observe(fdContainer.parentElement || fdContainer);
+  }
+
   // Smooth-scroll for in-page anchors
   document.querySelectorAll('a[href^="#"]').forEach((a) => {
     a.addEventListener('click', (e) => {

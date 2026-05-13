@@ -1040,7 +1040,7 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
 .site-foot a { color: var(--bone); text-decoration: none; }
 .site-foot a:hover { color: var(--clay); }
 .foot-grid { display: grid; gap: var(--s-7); grid-template-columns: 1fr; }
-@media (min-width: 800px) { .foot-grid { grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--s-7); } }
+@media (min-width: 800px) { .foot-grid { grid-template-columns: 1.4fr 1fr 1fr 1.4fr 1fr; gap: var(--s-7); } }
 .foot-brand img { height: 32px; width: auto; display: block; filter: invert(1); }
 .foot-list { display: flex; flex-direction: column; gap: var(--s-2); }
 .foot-list a { font-size: var(--t-sm); }
