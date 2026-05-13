@@ -11,12 +11,10 @@ Thumbs.db
 *.swo
 *~
 
-# Surge artifacts (local-only, Netlify uses its own domain config)
+# Surge artifacts (Surge.sh preview hosting retired; .surge/ would only
+# be regenerated if someone runs `surge` locally — keep it ignored)
 .surge/
-CNAME
 
-# Local-only operational docs
-CLAUDE.md
 
 # Build / cache
 node_modules/
