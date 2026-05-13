@@ -180,7 +180,7 @@ In a browser, click through:
 - [ ] One form submission
 
 **Email test (critical):**
-- [ ] Send an email from a non-Mosaic address to `nicole@mosaicclimbing.com`
+- [ ] Send an email from a non-Mosaic address to `info@mosaicclimbing.com`
 - [ ] Wait ~1 minute
 - [ ] Verify it arrives in Nicole's Gmail inbox
 
@@ -318,7 +318,7 @@ Run through this list 1–2 hours after the cutover, and again after 24 h:
 - [ ] `mosaicclimbing.com/youth-classes` → 301 to `/booking`
 
 **Email:**
-- [ ] External email to `nicole@mosaicclimbing.com` arrives in her Gmail
+- [ ] External email to `info@mosaicclimbing.com` arrives in her Gmail
 - [ ] Send a test email FROM Mosaic to verify outbound still works
 - [ ] Check spam folder — should NOT be flagged
 
