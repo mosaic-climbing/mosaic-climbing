@@ -1,6 +1,6 @@
 # Mosaic Climbing — site handoff
 
-Static marketing site for Mosaic Climbing (indoor climbing gym, 9501 Union Cemetery Road, Loveland, OH 45140 — phone 513-781-4083, opened March 2019). Replaces the existing Wix site at https://www.mosaicclimbing.com. Owner contact: Nicole — `nicole@mosaicclimbing.com`. Primary maintainer: Chris — `chris@lefclimbing.com`.
+Static marketing site for Mosaic Climbing (indoor climbing gym, 9501 Union Cemetery Road, Loveland, OH 45140 — phone 513-781-4083, opened March 2019). Replaces the existing Wix site at https://www.mosaicclimbing.com. Owner is Nicole; primary maintainer is Chris. Site contact email is `info@mosaicclimbing.com` (also where all form submissions are delivered).
 
 ## Stack
 
