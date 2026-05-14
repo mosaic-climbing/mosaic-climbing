@@ -1153,6 +1153,9 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
   overflow: hidden;
   position: relative;
 }
+.img > picture,
+.alt-row__media > picture,
+.hero-promo__img > picture { display: block; width: 100%; height: 100%; }
 .img img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(1.04) contrast(1.03); }
 .img-square { aspect-ratio: 1 / 1; }
 .img-portrait { aspect-ratio: 4 / 5; }
