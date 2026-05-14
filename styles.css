@@ -1523,6 +1523,18 @@ h3 {
   margin: 0 var(--gutter) var(--s-7) var(--gutter);
 }
 
+/* Mobile: stack headline above the promo card so they don't overlap */
+@media (max-width: 640px) {
+  .photo-hero {
+    min-height: clamp(560px, 80vh, 720px);
+  }
+  .photo-hero__wrap {
+    grid-row: 1;
+    align-self: end;
+    padding-block: 0 var(--s-5);
+  }
+}
+
 /* Buttons — coral primary */
 .btn-primary {
   background: var(--clay);
