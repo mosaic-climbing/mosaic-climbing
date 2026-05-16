@@ -94,13 +94,17 @@
   function fmtWeekRange(start) {
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
-    const sameMonth = start.getMonth() === end.getMonth();
-    const sameYear  = start.getFullYear() === end.getFullYear();
-    const left  = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const right = end.toLocaleDateString('en-US', sameMonth
-      ? { day: 'numeric', year: 'numeric' }
-      : { month: 'short', day: 'numeric', year: sameYear ? undefined : 'numeric' });
-    return sameYear ? `${left} – ${right}` : `${left}, ${start.getFullYear()} – ${right}`;
+    const sm = start.toLocaleDateString('en-US', { month: 'short' });
+    const em = end.toLocaleDateString('en-US', { month: 'short' });
+    const sy = start.getFullYear();
+    const ey = end.getFullYear();
+    if (sy === ey && sm === em) {
+      return `${sm} ${start.getDate()} – ${end.getDate()}, ${sy}`;
+    }
+    if (sy === ey) {
+      return `${sm} ${start.getDate()} – ${em} ${end.getDate()}, ${sy}`;
+    }
+    return `${sm} ${start.getDate()}, ${sy} – ${em} ${end.getDate()}, ${ey}`;
   }
 
   function categoryLabel(cat) {
