@@ -1814,9 +1814,8 @@ a:hover { color: var(--clay); }
 }
 .cal-chip__time {
   font-feature-settings: var(--tnum);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 10px;
-  opacity: 0.88;
   flex-shrink: 0;
 }
 .cal-chip__title {
@@ -1828,9 +1827,9 @@ a:hover { color: var(--clay); }
   -webkit-box-orient: vertical;
   line-clamp: 3;
 }
-.cal-chip--block { min-height: 22px; }
+.cal-chip--block { min-height: 24px; }
 .cal-chip--block .cal-chip__title { order: 1; }
-.cal-chip--block .cal-chip__time { order: 2; opacity: 0.82; }
+.cal-chip--block .cal-chip__time { order: 2; }
 
 .cal-chip--youth { background: var(--clay-deep); }
 .cal-chip--youth:hover { background: #14293a; }
