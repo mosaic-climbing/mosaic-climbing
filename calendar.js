@@ -343,10 +343,11 @@
         const chip = a.isOverflow
           ? buildOverflowChip(a)
           : buildChip(a.ev, /*compact=*/ false);
-        // Chips in a 3+-lane cluster are ≤ ~33% of a day column wide. Tag them
-        // so CSS can drop padding + font, otherwise titles like "Weight Lifting
-        // Sign Up" fragment mid-word.
-        if (a.laneCount >= 3) chip.classList.add('cal-chip--narrow');
+        // Any clustered chip (≥ 2 lanes) is at most ~50% of a day column wide
+        // — narrow enough that titles like "Homeschool and High School Hours"
+        // wrap mid-word with the default font. Tag them so CSS drops padding
+        // and font down by ~1px.
+        if (a.laneCount >= 2) chip.classList.add('cal-chip--narrow');
         chip.style.top = `${(a.s - HOUR_START) * 100 / HOURS}%`;
         chip.style.height = `${Math.max(0.5, a.e - a.s) * 100 / HOURS}%`;
         chip.style.left = `calc(${(a.lane * 100) / a.laneCount}% + 2px)`;
@@ -412,7 +413,7 @@
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cal-chip cal-chip--overflow cal-chip--block'
-      + (a.laneCount >= 3 ? ' cal-chip--narrow' : '');
+      + (a.laneCount >= 2 ? ' cal-chip--narrow' : '');
     btn.dataset.overflowStart = startTime;
     btn.setAttribute(
       'aria-label',
