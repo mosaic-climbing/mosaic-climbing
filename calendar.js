@@ -442,6 +442,9 @@
     btn.dataset.evId = ev.id;
     btn.dataset.evStart = ev.start;
     btn.setAttribute('aria-label', `${ev.title} at ${fmtTime(ev.start)}. Open details.`);
+    // Native browser tooltip on hover — useful when the chip is too narrow to
+    // show the full title and CSS clamps it to 2 lines with ellipsis.
+    btn.title = `${ev.title} · ${fmtTimeRange(ev.start, ev.end)}`;
 
     const time = document.createElement('span');
     time.className = 'cal-chip__time';
