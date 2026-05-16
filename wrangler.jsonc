@@ -1,14 +1,36 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mosaic-climbing",
+  "main": "src/worker.js",
   "compatibility_date": "2026-05-05",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
+  // The Worker handles /api/events itself and delegates every other path to
+  // the static-assets bundle via env.ASSETS.fetch(). This keeps the existing
+  // marketing site (HTML/CSS/JS/images, _headers, _redirects) served exactly
+  // as before — only `/api/events` is new.
   "assets": {
-    "directory": "."
+    "directory": ".",
+    "binding": "ASSETS"
   },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+  // Worker-level rate limiting for /api/events. The binding wraps Cloudflare's
+  // built-in rate-limit engine: per-request, deterministic, no external state to
+  // manage. Period units: 10s or 60s (per Cloudflare docs).
+  // namespace_id is arbitrary but must be unique within this Worker. Increment
+  // it (or add a new binding) if we ever want a second rate-limit policy.
+  "unsafe": {
+    "bindings": [
+      {
+        "name": "EVENTS_RATE_LIMIT",
+        "type": "ratelimit",
+        "namespace_id": "1001",
+        "simple": {
+          "limit": 60,
+          "period": 60
+        }
+      }
+    ]
+  }
 }
