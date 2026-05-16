@@ -1,14 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mosaic-climbing",
+  "main": "src/worker.js",
   "compatibility_date": "2026-05-05",
+  "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
+  // The Worker handles /api/events itself and delegates every other path to
+  // the static-assets bundle via env.ASSETS.fetch(). This keeps the existing
+  // marketing site (HTML/CSS/JS/images, _headers, _redirects) served exactly
+  // as before — only `/api/events` is new.
   "assets": {
-    "directory": "."
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+    "directory": ".",
+    "binding": "ASSETS"
+  }
 }

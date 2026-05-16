@@ -327,9 +327,35 @@ Roughly +400 lines net. No new third-party network requests. No new external dep
 
 ---
 
-## 12. Hourly scraper (replaces the hand-edited `events.json`)
+## 12. Data source: thin Worker proxy at `/api/events` (current implementation)
 
-Goal: keep the marketing site's "static `events.json`" contract from §3, but populate the file from RGP's data hourly instead of by hand. Owner adds events in RGP once (which she already does for registration) → calendar on the marketing site reflects them within an hour, no PR needed.
+**Update 2026-05-16 (week-view round):** The earlier "hourly cron → R2-backed JSON" architecture (kept below for historical context in §12a-§12e) was simplified to a thin Worker proxy with a 5-minute edge cache. Reasons:
+
+- No cron, no R2, no KV — fewer moving parts.
+- Cloudflare's `caches.default` + `Cache-Control: s-maxage=300` gives the same "browser sees a fast static-feeling endpoint" behavior with no scheduled-job state to manage.
+- Updates land within 5 min of an admin change instead of within 1 hour.
+- Failure surface is one file (`src/events-api.js`) instead of three (scheduled handler + R2 binding + KV plumbing).
+
+**Current implementation:**
+
+- `wrangler.jsonc` ships the static marketing site **plus** a Worker entry at `src/worker.js`.
+- The Worker routes `GET /api/events` to `src/events-api.js`, which:
+  1. Checks `caches.default` for a fresh response (5-min TTL) — return on hit.
+  2. On miss, calls `fetchAllRows()` from `src/scrape.js` (same code as before — month-windowed `StorefrontCalendarQuery` against `portal.mosaicclimbing.com/graphql-public`).
+  3. Normalizes via `src/normalize.js` and returns JSON with `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`.
+  4. Stores the response in `caches.default` via `ctx.waitUntil()`.
+- All other paths fall through to `env.ASSETS.fetch(request)` — the static site continues to serve exactly as before.
+- `calendar.js` fetches `/api/events` (same-origin) instead of the prior `events.json`.
+- `events.json` is **deleted** — the Worker is the single source of truth.
+
+**Scrape-path knobs** (still in `src/calendar-config.js`):
+
+- `CALENDAR_INPUT_EXTRA` — captured `facilityId` + `planId` whitelist. Regenerate with `node scripts/capture-calendar-input.mjs` if Mosaic publishes new plans.
+- `WINDOW_DAYS = 21` — empirically the storefront API rejects ranges over ~3 weeks.
+- `MONTHS_AHEAD = 6` — covers Summer Camp + recurring class horizon.
+- `CATEGORY_RULES` — title → category heuristic (youth / workshop / member / event).
+
+**What the historical §12a-§12g below describes (cron + R2 + KV)** is no longer implemented. Kept for reference because the trade-off discussion is still useful if we ever need to switch back (e.g. if `/graphql-public` adds rate limits per origin IP).
 
 ### 12a. Scrape-path decision (with evidence)
 

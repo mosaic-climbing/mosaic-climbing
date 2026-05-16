@@ -21,14 +21,14 @@
 <link rel="preconnect" href="https://cdn.lightwidget.com" crossorigin />
 <link rel="preload" href="/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="/fonts/kJEnBuEW6A0lliaV_m88ja5Twtx8BWhtkDVmjZvMV4PZA81dNA6MzbxG.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" as="fetch" href="/events.json" crossorigin />
+<link rel="preload" as="fetch" href="/api/events" crossorigin />
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="preload" as="image" href="/images/class-overhang-mobile.avif?v=2" media="(max-width: 800px)" type="image/avif" fetchpriority="high" />
 <link rel="preload" as="image" href="/images/class-overhang.avif?v=2" media="(min-width: 801px)" type="image/avif" fetchpriority="high" />
-<link rel="stylesheet" href="styles.css?v=42" />
+<link rel="stylesheet" href="styles.css?v=43" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -119,34 +119,20 @@
       <section class="cal-app" data-cal-app aria-label="Mosaic Climbing events calendar">
         <header class="cal-toolbar">
           <div class="cal-nav-group">
-            <button class="cal-iconbtn" type="button" data-cal-prev aria-label="Previous month">
+            <button class="cal-iconbtn" type="button" data-cal-prev aria-label="Previous week">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
             </button>
-            <button class="cal-iconbtn" type="button" data-cal-next aria-label="Next month">
+            <button class="cal-iconbtn" type="button" data-cal-next aria-label="Next week">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
             </button>
           </div>
           <h2 class="cal-title" data-cal-title aria-live="polite">—</h2>
-          <button class="btn btn-ghost btn-sm cal-today" type="button" data-cal-today>Today</button>
+          <button class="btn btn-ghost btn-sm cal-today" type="button" data-cal-today>This week</button>
         </header>
 
         <p class="cal-status" data-cal-status>Loading events…</p>
 
-        <div class="cal-weekhdr" aria-hidden="true">
-          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-        </div>
-
-        <div class="cal-grid" data-cal-grid role="grid" aria-label="Month grid"></div>
-
-        <div class="cal-daypane" data-cal-daypane hidden>
-          <div class="cal-daypane__head">
-            <h3 class="cal-daypane__title" data-cal-daypane-title>—</h3>
-            <button class="cal-iconbtn cal-daypane__close" type="button" data-cal-daypane-close aria-label="Close day list">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-          </div>
-          <ul class="cal-daypane__list" data-cal-daypane-list></ul>
-        </div>
+        <div class="cal-grid" data-cal-grid role="grid" aria-label="Week schedule"></div>
 
         <p class="cal-meta" data-cal-meta></p>
       </section>
@@ -235,6 +221,6 @@
 </footer>
 
 <script src="script.js?v=5" defer></script>
-<script src="calendar.js?v=1" defer></script>
+<script src="calendar.js?v=2" defer></script>
 </body>
 </html>

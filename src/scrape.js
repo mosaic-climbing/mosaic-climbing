@@ -4,7 +4,7 @@ import {
   CALENDAR_INPUT_EXTRA,
   WINDOW_DAYS,
   MONTHS_AHEAD,
-} from './config.js';
+} from './calendar-config.js';
 
 // The exact query body from the SPA bundle. Keep formatting verbatim — rphq
 // fingerprints operations by hash; reformatting can break persisted-query

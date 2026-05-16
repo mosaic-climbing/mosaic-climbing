@@ -1,4 +1,4 @@
-import { CATEGORY_RULES } from './config.js';
+import { CATEGORY_RULES } from './calendar-config.js';
 
 function categoryFor(title) {
   for (const rule of CATEGORY_RULES) {
