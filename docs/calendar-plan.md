@@ -619,7 +619,7 @@ Bound via `wrangler secret put REDPOINT_TOKEN` etc. — `wrangler.jsonc` already
 
 ### 13a. Rate-limit `/api/events`
 
-**Shipped: Worker-level rate-limit binding** (no dashboard click, no separate API call). Declared in `wrangler.jsonc`:
+**Shipped: Worker-level rate-limit binding** — 60 requests / 60 seconds keyed on the requesting IP, evaluated before the cache lookup and the upstream GraphQL fan-out. Declared in `wrangler.jsonc`:
 
 ```jsonc
 "unsafe": {
@@ -642,32 +642,11 @@ const { success } = await env.EVENTS_RATE_LIMIT.limit({ key: ip });
 if (!success) return new Response(JSON.stringify({ error: 'rate_limit', … }), { status: 429, … });
 ```
 
-60 requests / 60 seconds keyed on the requesting IP. The check runs before the upstream fan-out, so a hammering client can't trigger the 9 GraphQL POSTs per request. Combined with the 5-minute `caches.default` window, sustained per-IP cost is bounded.
+This deploys on the normal git push — no dashboard click, no separate API call. Period must be `10` or `60` seconds (Cloudflare API constraint).
 
-**Why this path over the zone-level Rate Limiting Rule:**
+Combined with the 5-minute `caches.default` `s-maxage`, sustained per-IP load on the upstream is bounded: at most `(60 req/min) × (1 MISS / 5 min) × (9 GraphQL POSTs / MISS) ≈ 110 upstream calls / IP / hour` in the absolute-worst-case where every request is cache-bust-able (it isn't — cache keys strip query strings).
 
-| Path | Where it runs | Setup | Trade-offs |
-|---|---|---|---|
-| **Worker-level binding** (shipped) | Inside the Worker, before any other code in `handleEventsRequest`. | Declared in `wrangler.jsonc`, deployed by the usual git-push flow. | Each request counts as one Worker invocation (we already pay for that since `/api/events` *is* a Worker route — net-zero cost). Granular keying on any header. **No per-zone rule cap.** Period must be 10 s or 60 s. |
-| **Zone-level Rate Limiting Rule** (WAF) | At Cloudflare's edge, before the Worker is invoked. | Apply via `scripts/apply-rate-limit.sh` (PR-included), or via dashboard. | Free plan caps the number of WAF rate-limit rules per zone. Cheaper in Worker CPU on rate-limited requests (we don't pay the Worker invocation). Better for "this whole zone is being DDoS'd" scenarios. |
-| **Dashboard clicks** | Same as zone-level, via the UI. | Manual setup. | We've replaced this path with the script below; documented for completeness. |
-
-**Alternative / belt-and-suspenders: zone-level rule.** A one-shot bash script at `scripts/apply-rate-limit.sh` POSTs the rule via the Cloudflare Ruleset Engine API:
-
-```bash
-CF_API_TOKEN=<token>  CF_ZONE_ID=<zone-id>  ./scripts/apply-rate-limit.sh
-```
-
-Required token permission: `Zone → Zone WAF → Edit`. `CF_ZONE_ID` is visible in the dashboard's zone overview sidebar.
-
-The rule shape (see the script for full payload):
-
-- Match: `http.request.uri.path eq "/api/events" and http.request.method eq "GET"`
-- Characteristic: `ip.src`
-- 60 req / 60 s, mitigation timeout 60 s
-- Action: block with 429 + small JSON body
-
-Running both layers is fine — the zone-level rule fires first; if a request gets past it (under the limit), the Worker binding gives a second, finer-grained check.
+The user is also configuring a **zone-level Rate Limiting Rule** in the Cloudflare dashboard for defense in depth at the edge — that runs ahead of the Worker invocation entirely. The two layers compose: zone-rule blocks abuse at the edge; the binding catches anything that gets through.
 
 ### 13b. Content Security Policy
 
