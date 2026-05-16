@@ -617,37 +617,57 @@ Bound via `wrangler secret put REDPOINT_TOKEN` etc. — `wrangler.jsonc` already
 
 ## 13. Operational guardrails
 
-### 13a. Rate-limit `/api/events` (TODO — needs dashboard click)
+### 13a. Rate-limit `/api/events`
 
-`wrangler.jsonc` cannot declare zone-level Rate Limiting Rules. They live in the Cloudflare dashboard or are managed via the zone-level API. **Apply manually:**
+**Shipped: Worker-level rate-limit binding** (no dashboard click, no separate API call). Declared in `wrangler.jsonc`:
 
-1. Cloudflare dashboard → `mosaicclimbing.com` zone → Security → WAF → Rate limiting rules.
-2. Click **Create rule**.
-3. Field config:
-   - **Rule name:** `mosaic events api`
-   - **Match expression:** `(http.request.uri.path eq "/api/events")` — also add `or (http.request.uri.path eq "/api/events/")` for the trailing-slash variant if you like belt-and-suspenders.
-   - **Characteristics:** IP source address (default)
-   - **Period:** 1 minute
-   - **Requests per period:** **60**
-   - **Action:** Block, with status `429`
-   - **Duration:** 1 minute
-4. Save + deploy.
+```jsonc
+"unsafe": {
+  "bindings": [
+    {
+      "name": "EVENTS_RATE_LIMIT",
+      "type": "ratelimit",
+      "namespace_id": "1001",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ]
+}
+```
 
-This caps abuse below the practical cache-amplification ceiling (each MISS triggers 9 upstream GraphQL POSTs; with 60 req/min/IP and a 5-min edge cache, sustained per-IP burn is bounded). The Worker's `caches.default` 5-min `s-maxage` keeps the legitimate path fast.
+Consumed in `src/events-api.js` at the top of `handleEventsRequest`:
 
-If the dashboard isn't available right now, the equivalent via API:
+```js
+const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+const { success } = await env.EVENTS_RATE_LIMIT.limit({ key: ip });
+if (!success) return new Response(JSON.stringify({ error: 'rate_limit', … }), { status: 429, … });
+```
+
+60 requests / 60 seconds keyed on the requesting IP. The check runs before the upstream fan-out, so a hammering client can't trigger the 9 GraphQL POSTs per request. Combined with the 5-minute `caches.default` window, sustained per-IP cost is bounded.
+
+**Why this path over the zone-level Rate Limiting Rule:**
+
+| Path | Where it runs | Setup | Trade-offs |
+|---|---|---|---|
+| **Worker-level binding** (shipped) | Inside the Worker, before any other code in `handleEventsRequest`. | Declared in `wrangler.jsonc`, deployed by the usual git-push flow. | Each request counts as one Worker invocation (we already pay for that since `/api/events` *is* a Worker route — net-zero cost). Granular keying on any header. **No per-zone rule cap.** Period must be 10 s or 60 s. |
+| **Zone-level Rate Limiting Rule** (WAF) | At Cloudflare's edge, before the Worker is invoked. | Apply via `scripts/apply-rate-limit.sh` (PR-included), or via dashboard. | Free plan caps the number of WAF rate-limit rules per zone. Cheaper in Worker CPU on rate-limited requests (we don't pay the Worker invocation). Better for "this whole zone is being DDoS'd" scenarios. |
+| **Dashboard clicks** | Same as zone-level, via the UI. | Manual setup. | We've replaced this path with the script below; documented for completeness. |
+
+**Alternative / belt-and-suspenders: zone-level rule.** A one-shot bash script at `scripts/apply-rate-limit.sh` POSTs the rule via the Cloudflare Ruleset Engine API:
 
 ```bash
-curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rate_limits" \
-  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "match": {"request": {"url_pattern": "mosaicclimbing.com/api/events"}},
-    "threshold": 60,
-    "period": 60,
-    "action": {"mode": "ban", "timeout": 60, "response": {"content_type": "application/json", "body": "{\"error\":\"rate_limit\"}"}}
-  }'
+CF_API_TOKEN=<token>  CF_ZONE_ID=<zone-id>  ./scripts/apply-rate-limit.sh
 ```
+
+Required token permission: `Zone → Zone WAF → Edit`. `CF_ZONE_ID` is visible in the dashboard's zone overview sidebar.
+
+The rule shape (see the script for full payload):
+
+- Match: `http.request.uri.path eq "/api/events" and http.request.method eq "GET"`
+- Characteristic: `ip.src`
+- 60 req / 60 s, mitigation timeout 60 s
+- Action: block with 429 + small JSON body
+
+Running both layers is fine — the zone-level rule fires first; if a request gets past it (under the limit), the Worker binding gives a second, finer-grained check.
 
 ### 13b. Content Security Policy
 

@@ -15,15 +15,24 @@
   const statusEl   = root.querySelector('[data-cal-status]');
   const metaEl     = root.querySelector('[data-cal-meta]');
 
-  const modal      = document.querySelector('[data-cal-modal]');
-  const modalCat   = modal && modal.querySelector('[data-cal-modal-cat]');
-  const modalTitle = modal && modal.querySelector('[data-cal-modal-title]');
-  const modalWhen  = modal && modal.querySelector('[data-cal-modal-when]');
-  const modalInst  = modal && modal.querySelector('[data-cal-modal-instructor]');
-  const modalCap   = modal && modal.querySelector('[data-cal-modal-capacity]');
-  const modalDesc  = modal && modal.querySelector('[data-cal-modal-desc]');
-  const modalCta   = modal && modal.querySelector('[data-cal-modal-cta]');
-  const modalClose = modal && modal.querySelector('[data-cal-modal-close]');
+  const modal       = document.querySelector('[data-cal-modal]');
+  const modalEvent  = modal && modal.querySelector('[data-cal-modal-event]');
+  const modalList   = modal && modal.querySelector('[data-cal-modal-list]');
+  const modalBack   = modal && modal.querySelector('[data-cal-modal-back]');
+  const modalCat    = modal && modal.querySelector('[data-cal-modal-cat]');
+  const modalTitle  = modal && modal.querySelector('[data-cal-modal-title]');
+  const modalWhen   = modal && modal.querySelector('[data-cal-modal-when]');
+  const modalInst   = modal && modal.querySelector('[data-cal-modal-instructor]');
+  const modalCap    = modal && modal.querySelector('[data-cal-modal-capacity]');
+  const modalDesc   = modal && modal.querySelector('[data-cal-modal-desc]');
+  const modalCta    = modal && modal.querySelector('[data-cal-modal-cta]');
+  const modalClose  = modal && modal.querySelector('[data-cal-modal-close]');
+  const modalListTitle = modal && modal.querySelector('[data-cal-modal-list-title]');
+  const modalListWhen  = modal && modal.querySelector('[data-cal-modal-list-when]');
+  const modalListItems = modal && modal.querySelector('[data-cal-modal-list-items]');
+  // When the modal is opened in list-mode, remember it so the back arrow can
+  // pop the user out of the single-event view and back into the list.
+  let modalListContext = null;
 
   // Time axis bounds — sized from real event range (9am earliest, 9pm latest)
   // with one hour of padding on each side.
@@ -146,22 +155,33 @@
     return map;
   }
 
-  // Lane-pack a day's events for side-by-side overlap rendering.
-  // Returns each event annotated with { lane, laneCount } where lane is the
-  // 0-based column inside the day, and laneCount is the cluster's width.
+  // Lane-pack a day's events for side-by-side overlap rendering, capped at
+  // MAX_LANES. When a cluster has more events than fit, the last lane becomes
+  // a single "+N more" overflow chip that opens a list-mode modal.
+  //
+  // Design choice (cap at 3, not 2 or 4):
+  //   - The live data tops out at 4 concurrent events on the busiest day
+  //     (Wed May 20: Adventurers + Yoga + Massage + Top Rope at 6:30-8 PM).
+  //   - Cap at 3 lanes → 33% chip width on a 163px desktop day column
+  //     (~54px each) — wide enough to show the full title in most cases.
+  //   - Cap at 2 would trigger the overflow chip on any 3-event cluster,
+  //     which is the common case; we'd lose more information than we gain.
+  //   - There are zero same-title-same-time duplicates in the data, so
+  //     "merge identical concurrent" wouldn't help.
+  const MAX_LANES = 3;
   function assignLanes(dayEvents) {
     if (dayEvents.length === 0) return [];
     const annotated = dayEvents.map((e) => ({
-      ev: e,
-      s: eventStartHours(e),
-      e: eventEndHours(e),
-      lane: -1,
-    }));
-    // Find clusters of overlapping events.
+      ev: e, isOverflow: false,
+      s: eventStartHours(e), e: eventEndHours(e),
+      lane: -1, laneCount: 1,
+    })).sort((x, y) => x.s - y.s);
+
+    // Cluster: events that transitively share a time band.
     const clusters = [];
     let current = [];
     let clusterEnd = -Infinity;
-    for (const a of annotated.sort((x, y) => x.s - y.s)) {
+    for (const a of annotated) {
       if (a.s >= clusterEnd) {
         if (current.length) clusters.push(current);
         current = [a];
@@ -173,23 +193,39 @@
     }
     if (current.length) clusters.push(current);
 
-    // For each cluster, greedily assign lanes.
+    const out = [];
     for (const cluster of clusters) {
-      const laneEnds = []; // laneEnds[i] = end time of last event in lane i
+      // First-pass greedy lane assignment (uncapped).
+      const laneEnds = [];
       for (const a of cluster) {
         let lane = laneEnds.findIndex((end) => end <= a.s);
-        if (lane === -1) {
-          lane = laneEnds.length;
-          laneEnds.push(a.e);
-        } else {
-          laneEnds[lane] = a.e;
-        }
+        if (lane === -1) { lane = laneEnds.length; laneEnds.push(a.e); }
+        else { laneEnds[lane] = a.e; }
         a.lane = lane;
       }
-      const laneCount = laneEnds.length;
-      for (const a of cluster) a.laneCount = laneCount;
+      const totalLanes = laneEnds.length;
+
+      if (totalLanes <= MAX_LANES) {
+        for (const a of cluster) a.laneCount = totalLanes;
+        out.push(...cluster);
+      } else {
+        // Collapse anything at or beyond lane (MAX_LANES - 1) into a single
+        // overflow chip in that lane, spanning the union of those events.
+        const visible = cluster.filter((a) => a.lane < MAX_LANES - 1);
+        const overflowed = cluster.filter((a) => a.lane >= MAX_LANES - 1);
+        for (const a of visible) a.laneCount = MAX_LANES;
+        out.push(...visible);
+        out.push({
+          isOverflow: true,
+          events: overflowed.map((o) => o.ev),
+          s: Math.min(...overflowed.map((o) => o.s)),
+          e: Math.max(...overflowed.map((o) => o.e)),
+          lane: MAX_LANES - 1,
+          laneCount: MAX_LANES,
+        });
+      }
     }
-    return annotated;
+    return out;
   }
 
   function weekHasEvents(weekStart) {
@@ -304,7 +340,9 @@
       const dayEvents = STATE.byDay.get(iso) || [];
       const placed = assignLanes(dayEvents);
       for (const a of placed) {
-        const chip = buildChip(a.ev, /*compact=*/ false);
+        const chip = a.isOverflow
+          ? buildOverflowChip(a)
+          : buildChip(a.ev, /*compact=*/ false);
         chip.style.top = `${(a.s - HOUR_START) * 100 / HOURS}%`;
         chip.style.height = `${Math.max(0.5, a.e - a.s) * 100 / HOURS}%`;
         chip.style.left = `calc(${(a.lane * 100) / a.laneCount}% + 2px)`;
@@ -362,6 +400,34 @@
     }
   }
 
+  function buildOverflowChip(a) {
+    const n = a.events.length;
+    const startTime = a.events
+      .map((e) => e.start)
+      .sort()[0];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cal-chip cal-chip--overflow cal-chip--block';
+    btn.dataset.overflowStart = startTime;
+    btn.setAttribute(
+      'aria-label',
+      `${n} more events overlapping at ${fmtTime(startTime)}. Open list.`
+    );
+    const time = document.createElement('span');
+    time.className = 'cal-chip__time';
+    time.textContent = fmtTime(startTime);
+    btn.append(time);
+    const title = document.createElement('span');
+    title.className = 'cal-chip__title';
+    title.textContent = `+${n} more`;
+    btn.append(title);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openListModal(a.events, a.s, a.e);
+    });
+    return btn;
+  }
+
   function buildChip(ev, compact) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -395,8 +461,49 @@
     return `${h - 12}pm`;
   }
 
-  function openEventModal(ev) {
+  function openListModal(events, startHours, endHours) {
+    if (!modal || !modalList || !modalEvent) return;
+    modalListContext = events;
+    modalEvent.hidden = true;
+    modalList.hidden = false;
+    if (modalBack) modalBack.hidden = true;  // back-button only visible AFTER drilling in
+    if (modalListTitle) modalListTitle.textContent = `${events.length} overlapping events`;
+    if (modalListWhen) {
+      const earliest = events.map((e) => e.start).sort()[0];
+      const latest = events.map((e) => e.end).sort().at(-1);
+      modalListWhen.textContent = `${fmtTime(earliest)} – ${fmtTime(latest)}`;
+    }
+    if (modalListItems) {
+      modalListItems.innerHTML = '';
+      const sorted = events.slice().sort((a, b) => (a.start < b.start ? -1 : 1));
+      for (const ev of sorted) {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `cal-modal__list-item cal-modal__list-item--${safeCategory(ev.category)}`;
+        const time = document.createElement('span');
+        time.className = 'cal-modal__list-item__time';
+        time.textContent = fmtTimeRange(ev.start, ev.end);
+        const title = document.createElement('span');
+        title.className = 'cal-modal__list-item__title';
+        title.textContent = ev.title || 'Untitled event';
+        const cat = document.createElement('span');
+        cat.className = 'cal-modal__list-item__cat';
+        cat.textContent = categoryLabel(ev.category);
+        btn.append(time, title, cat);
+        btn.addEventListener('click', () => openEventModal(ev, /*fromList=*/ true));
+        li.append(btn);
+        modalListItems.append(li);
+      }
+    }
+    if (typeof modal.showModal === 'function' && !modal.open) modal.showModal();
+  }
+
+  function openEventModal(ev, fromList) {
     if (!modal) return;
+    if (modalEvent) modalEvent.hidden = false;
+    if (modalList)  modalList.hidden = true;
+    if (modalBack)  modalBack.hidden = !fromList || !modalListContext;
     if (modalCat)   modalCat.textContent = categoryLabel(ev.category);
     if (modalTitle) modalTitle.textContent = ev.title || 'Untitled event';
     if (modalWhen) {
@@ -439,16 +546,25 @@
       modalCta.href = ev.url || 'https://portal.mosaicclimbing.com/mos/n/calendar';
       modalCta.textContent = ev.cta || 'Register';
     }
-    if (typeof modal.showModal === 'function') {
+    if (typeof modal.showModal === 'function' && !modal.open) {
       modal.showModal();
-    } else {
+    } else if (!modal.hasAttribute('open')) {
       modal.setAttribute('open', '');
     }
   }
 
   function closeModal() {
     if (!modal) return;
+    modalListContext = null;
+    if (modalBack) modalBack.hidden = true;
     if (typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
+  }
+
+  function backToList() {
+    if (!modalListContext) return;
+    // re-open list mode with the remembered events
+    const ctx = modalListContext;
+    openListModal(ctx, 0, 0);   // start/end ignored when re-rendering
   }
 
   function userNav(delta) {
@@ -462,9 +578,12 @@
 
   if (modal) {
     modalClose && modalClose.addEventListener('click', closeModal);
+    modalBack && modalBack.addEventListener('click', backToList);
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });
+    // Native Esc / form-close → also reset list context
+    modal.addEventListener('close', () => { modalListContext = null; });
   }
 
   // Re-render on viewport flip between desktop and mobile so the layout

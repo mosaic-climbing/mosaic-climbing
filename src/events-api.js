@@ -15,7 +15,28 @@ import { buildPayload } from './normalize.js';
 
 const CACHE_TTL_SECONDS = 300;
 
-export async function handleEventsRequest(request, _env, ctx) {
+export async function handleEventsRequest(request, env, ctx) {
+  // Per-IP rate limit: 60 requests/minute. Runs before the upstream fan-out
+  // so a hammering client can't trigger 9 GraphQL POSTs per request. Binding
+  // is declared in wrangler.jsonc → unsafe.bindings.
+  if (env.EVENTS_RATE_LIMIT) {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const { success } = await env.EVENTS_RATE_LIMIT.limit({ key: ip });
+    if (!success) {
+      return new Response(
+        JSON.stringify({ error: 'rate_limit', message: 'Too many requests. Try again in a minute.' }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Retry-After': '60',
+            'Cache-Control': 'no-store',
+          },
+        }
+      );
+    }
+  }
+
   const cache = caches.default;
 
   // Cache key normalizes the URL — strip any extraneous query params so we

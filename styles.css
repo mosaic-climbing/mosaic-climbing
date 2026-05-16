@@ -1572,6 +1572,30 @@ a:hover { color: var(--clay); }
 .cal-chip--member:hover { background: #000; }
 .cal-chip--event { background: var(--ink-mute); color: var(--bone); }
 .cal-chip--event:hover { background: var(--ink); }
+/* Overflow chip — "+N more" when a time cluster exceeds MAX_LANES.
+   Stripe pattern signals "this aggregates multiple events". */
+.cal-chip--overflow {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--ink-mute) 0,
+    var(--ink-mute) 6px,
+    color-mix(in srgb, var(--ink-mute) 75%, var(--bone)) 6px,
+    color-mix(in srgb, var(--ink-mute) 75%, var(--bone)) 12px
+  );
+  color: var(--bone);
+  border-color: var(--ink-soft);
+  font-weight: 700;
+}
+.cal-chip--overflow:hover {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--ink) 0,
+    var(--ink) 6px,
+    color-mix(in srgb, var(--ink) 75%, var(--bone)) 6px,
+    color-mix(in srgb, var(--ink) 75%, var(--bone)) 12px
+  );
+}
+.cal-chip--overflow .cal-chip__title { font-weight: 800; }
 
 .cal-meta {
   margin: 0;
@@ -1662,6 +1686,78 @@ a:hover { color: var(--clay); }
 }
 .cal-modal__desc p { margin: 0 0 var(--s-3); }
 .cal-modal__desc p:last-child { margin-bottom: 0; }
+
+/* Modal — list mode (shown when a "+N more" overflow chip is clicked) */
+.cal-modal__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 0 0 var(--s-3);
+  font: 600 var(--t-xs)/1 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+.cal-modal__back:hover { color: var(--clay); }
+.cal-modal__back[hidden] { display: none; }
+.cal-modal__list[hidden] { display: none; }
+.cal-modal__event[hidden] { display: none; }
+.cal-modal__list-items {
+  list-style: none;
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cal-modal__list-item {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bone-deep);
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-family: var(--sans);
+  font-size: var(--t-sm);
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.cal-modal__list-item:hover {
+  background: color-mix(in srgb, var(--clay) 10%, var(--bone-deep));
+  border-color: var(--clay);
+}
+.cal-modal__list-item:focus-visible {
+  outline: 2px solid var(--clay);
+  outline-offset: 2px;
+}
+.cal-modal__list-item__time {
+  font-feature-settings: var(--tnum);
+  font-weight: 700;
+  color: var(--clay);
+  font-size: 12px;
+}
+.cal-modal__list-item__title {
+  font-weight: 700;
+  color: var(--ink);
+}
+.cal-modal__list-item__cat {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  color: var(--ink-mute);
+}
+.cal-modal__list-item--youth .cal-modal__list-item__time { color: var(--clay-deep); }
+.cal-modal__list-item--member .cal-modal__list-item__time { color: var(--ink); }
+.cal-modal__list-item--event .cal-modal__list-item__time { color: var(--ink-mute); }
 
 /* Mobile — vertical agenda list ------------------------------------------- */
 @media (max-width: 720px) {
