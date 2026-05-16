@@ -1,4 +1,4 @@
-import { CATEGORY_RULES } from './calendar-config.js';
+import { CATEGORY_RULES, TITLE_TO_PROGRAM_SLUG } from './calendar-config.js';
 
 function categoryFor(title) {
   for (const rule of CATEGORY_RULES) {
@@ -42,17 +42,20 @@ function stripHtml(s) {
     .trim();
 }
 
-// We deep-link into the portal's program page when possible. The full
-// canonical URL needs a `slug`, which the StorefrontCalendarQuery rows
-// don't directly include. Until we wire a separate slug lookup (one
-// /mos/n/calendar HTML scrape would give us the catalog mapping), we
-// degrade to a query-string deep-link off the public calendar page —
-// safe and always works, even if uglier.
+// Deep-link the chip's Register button to the portal's program page for the
+// specific course, e.g.
+//   https://portal.mosaicclimbing.com/mos/programs/top-rope-class-2?course=…&date=2026-05-18
+// The slug isn't returned by StorefrontCalendarQuery, so we look it up from
+// the title→slug map in calendar-config.js. If we don't have a mapping for
+// a title (e.g. Mosaic added a new program), we fall back to the storefront
+// calendar so the link is at worst one click away from the right page.
 function urlFor(row) {
   const params = new URLSearchParams({ course: row.courseId });
   if (row.sessionFacilityHash) params.set('session', row.sessionFacilityHash);
   if (row.startLocal) params.set('date', row.startLocal.slice(0, 10));
-  return `https://portal.mosaicclimbing.com/mos/n/calendar?${params.toString()}`;
+  const slug = TITLE_TO_PROGRAM_SLUG[row.publicTitle];
+  const path = slug ? `/mos/programs/${slug}` : '/mos/n/calendar';
+  return `https://portal.mosaicclimbing.com${path}?${params.toString()}`;
 }
 
 export function normalizeRow(row) {
