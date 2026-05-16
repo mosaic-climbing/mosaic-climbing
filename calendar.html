@@ -4,30 +4,31 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Events Calendar — Mosaic Climbing, Loveland OH</title>
-<meta name="description" content="Upcoming events, youth workshops, summer camps, and member workshops at Mosaic Climbing in Loveland, Ohio. Register for upcoming programs." />
+<meta name="description" content="Upcoming classes, workshops, summer camp, youth programs, and member events at Mosaic Climbing in Loveland, Ohio. Browse by month and register through our portal." />
 <meta name="theme-color" content="#1a1a1a" />
 <link rel="canonical" href="https://www.mosaicclimbing.com/calendar" />
 <meta property="og:site_name" content="Mosaic Climbing" />
 <meta property="og:title" content="Events Calendar — Mosaic Climbing, Loveland OH" />
-<meta property="og:description" content="Upcoming events, workshops, and camps at Mosaic Climbing in Loveland, Ohio." />
+<meta property="og:description" content="Upcoming classes, workshops, and youth programs at Mosaic Climbing in Loveland, Ohio." />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://www.mosaicclimbing.com/calendar" />
 <meta property="og:image" content="https://www.mosaicclimbing.com/images/class-overhang.jpg" />
 <meta property="og:locale" content="en_US" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Events Calendar — Mosaic Climbing, Loveland OH" />
-<meta name="twitter:description" content="Upcoming events, workshops, and camps at Mosaic Climbing in Loveland, Ohio." />
+<meta name="twitter:description" content="Upcoming classes, workshops, and youth programs at Mosaic Climbing in Loveland, Ohio." />
 <meta name="twitter:image" content="https://www.mosaicclimbing.com/images/class-overhang.jpg" />
 <link rel="preconnect" href="https://cdn.lightwidget.com" crossorigin />
 <link rel="preload" href="/fonts/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7W0Q5nw.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="preload" href="/fonts/kJEnBuEW6A0lliaV_m88ja5Twtx8BWhtkDVmjZvMV4PZA81dNA6MzbxG.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" as="fetch" href="/events.json" crossorigin />
 <link rel="icon" href="/favicon.ico" sizes="any" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="preload" as="image" href="/images/class-overhang-mobile.avif?v=2" media="(max-width: 800px)" type="image/avif" fetchpriority="high" />
 <link rel="preload" as="image" href="/images/class-overhang.avif?v=2" media="(min-width: 801px)" type="image/avif" fetchpriority="high" />
-<link rel="stylesheet" href="styles.css?v=41" />
+<link rel="stylesheet" href="styles.css?v=42" />
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -53,30 +54,30 @@
   "sameAs": ["https://www.facebook.com/mosaicclimbing/", "https://www.instagram.com/mosaicclimbing"]
 }
 </script>
-<style>
-  .ev {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--s-4);
-    padding-block: var(--s-6);
-    border-top: 1px solid var(--line);
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Event",
+  "name": "Mosaic Climbing Summer Camp 2026",
+  "description": "Week-long summer climbing camps for kids at Mosaic Climbing in Loveland, Ohio.",
+  "startDate": "2026-06-08",
+  "endDate": "2026-08-14",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "eventStatus": "https://schema.org/EventScheduled",
+  "location": {
+    "@type": "Place",
+    "name": "Mosaic Climbing",
+    "address": {"@type": "PostalAddress", "streetAddress": "9501 Union Cemetery Road", "addressLocality": "Loveland", "addressRegion": "OH", "postalCode": "45140", "addressCountry": "US"}
+  },
+  "organizer": {"@id": "https://www.mosaicclimbing.com/#business"},
+  "url": "https://portal.mosaicclimbing.com/mos/programs/summer-camp",
+  "offers": {
+    "@type": "Offer",
+    "url": "https://portal.mosaicclimbing.com/mos/programs/summer-camp",
+    "availability": "https://schema.org/InStock"
   }
-  .ev:last-of-type { border-bottom: 1px solid var(--line); }
-  .ev .when {
-    font-family: var(--sans);
-    font-weight: 800;
-    font-size: var(--t-md);
-    letter-spacing: -0.02em;
-    color: var(--clay);
-    font-feature-settings: 'tnum';
-    line-height: 1;
-  }
-  .ev h2 { font-size: var(--t-xl); }
-  .ev p { max-width: 60ch; }
-  @media (min-width: 800px) {
-    .ev { grid-template-columns: 240px 1fr auto; align-items: baseline; gap: var(--s-7); }
-  }
-</style>
+}
+</script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -110,55 +111,72 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section section-tight">
     <div class="wrap">
 
-      <p class="lede" style="max-width: none;">Browse upcoming classes, workshops, programs, and member events on our full calendar.</p>
-      <div class="actions mt-5">
-        <a href="https://portal.mosaicclimbing.com/mos/n/calendar" rel="noopener" class="btn btn-primary btn-lg btn-arrow">View full calendar</a>
+      <p class="lede">Classes, workshops, youth programs, and special events at the gym. Click any event for details and to register through our portal.</p>
+
+      <section class="cal-app" data-cal-app aria-label="Mosaic Climbing events calendar">
+        <header class="cal-toolbar">
+          <div class="cal-nav-group">
+            <button class="cal-iconbtn" type="button" data-cal-prev aria-label="Previous month">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="cal-iconbtn" type="button" data-cal-next aria-label="Next month">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          <h2 class="cal-title" data-cal-title aria-live="polite">—</h2>
+          <button class="btn btn-ghost btn-sm cal-today" type="button" data-cal-today>Today</button>
+        </header>
+
+        <p class="cal-status" data-cal-status>Loading events…</p>
+
+        <div class="cal-weekhdr" aria-hidden="true">
+          <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+        </div>
+
+        <div class="cal-grid" data-cal-grid role="grid" aria-label="Month grid"></div>
+
+        <div class="cal-daypane" data-cal-daypane hidden>
+          <div class="cal-daypane__head">
+            <h3 class="cal-daypane__title" data-cal-daypane-title>—</h3>
+            <button class="cal-iconbtn cal-daypane__close" type="button" data-cal-daypane-close aria-label="Close day list">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+          <ul class="cal-daypane__list" data-cal-daypane-list></ul>
+        </div>
+
+        <p class="cal-meta" data-cal-meta></p>
+      </section>
+
+      <hr class="rule mt-7" />
+
+      <p>For the full registration interface — drop-in passes, memberships, and account access — visit the Mosaic portal.</p>
+      <div class="actions">
+        <a href="https://portal.mosaicclimbing.com/mos/n/calendar" rel="noopener" class="btn btn-ghost btn-arrow">Open the Mosaic portal</a>
       </div>
-
-      <hr class="rule" />
-
-      <article class="ev">
-        <div>
-          <span class="when">Summer</span>
-        </div>
-        <div>
-          <h2>SUMMER CAMP REGISTRATION IS OPEN</h2>
-        </div>
-        <div>
-          <a href="https://portal.mosaicclimbing.com/mos/programs/summer-camp?course=Q291cnNlOjkxMGE2MGYyN2Q5NjExMWRkYTJhYmU4NWI3MDVlZjBk&amp;date=2026-06-08" rel="noopener" class="btn btn-primary btn-arrow">Register Here</a>
-        </div>
-      </article>
-
-      <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Event",
-        "name": "Mosaic Climbing Summer Camp 2026",
-        "description": "Week-long summer climbing camps for kids at Mosaic Climbing in Loveland, Ohio.",
-        "startDate": "2026-06-08",
-        "endDate": "2026-08-14",
-        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-        "eventStatus": "https://schema.org/EventScheduled",
-        "location": {
-          "@type": "Place",
-          "name": "Mosaic Climbing",
-          "address": {"@type": "PostalAddress", "streetAddress": "9501 Union Cemetery Road", "addressLocality": "Loveland", "addressRegion": "OH", "postalCode": "45140", "addressCountry": "US"}
-        },
-        "organizer": {"@id": "https://www.mosaicclimbing.com/#business"},
-        "url": "https://portal.mosaicclimbing.com/mos/programs/summer-camp",
-        "offers": {
-          "@type": "Offer",
-          "url": "https://portal.mosaicclimbing.com/mos/programs/summer-camp",
-          "availability": "https://schema.org/InStock"
-        }
-      }
-      </script>
 
     </div>
   </section>
+
+  <dialog class="cal-modal" data-cal-modal aria-labelledby="cal-modal-title">
+    <div class="cal-modal__panel">
+      <button class="cal-modal__close" type="button" data-cal-modal-close aria-label="Close">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <span class="cal-modal__cat" data-cal-modal-cat></span>
+      <h2 id="cal-modal-title" class="cal-modal__title" data-cal-modal-title></h2>
+      <p class="cal-modal__when" data-cal-modal-when></p>
+      <p class="cal-modal__instructor" data-cal-modal-instructor hidden></p>
+      <p class="cal-modal__capacity" data-cal-modal-capacity hidden></p>
+      <div class="cal-modal__desc" data-cal-modal-desc></div>
+      <div class="actions mt-5">
+        <a class="btn btn-primary btn-arrow" data-cal-modal-cta target="_blank" rel="noopener">Register</a>
+      </div>
+    </div>
+  </dialog>
 
 </main>
 
@@ -217,5 +235,6 @@
 </footer>
 
 <script src="script.js?v=5" defer></script>
+<script src="calendar.js?v=1" defer></script>
 </body>
 </html>
