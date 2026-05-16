@@ -350,10 +350,13 @@ a:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; border-ra
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
-/* Wider container — calendar page uses this so the week grid + its
-   surrounding text actually use the viewport on big monitors. Caps at 96vw
-   so it never butts against the edge on smaller screens. */
-.wrap--wide { max-width: min(1680px, 96vw); }
+/* Wider container — calendar page uses this so the week grid actually
+   uses the viewport on big monitors. Caps at 98vw with a tighter gutter
+   so the calendar grid breathes; capped at 1800px on huge displays. */
+.wrap--wide {
+  max-width: min(1800px, 98vw);
+  padding-inline: clamp(0.75rem, 2vw, 1.5rem);
+}
 
 /* Featured-event row (Summer Camp callout above the week grid). Three cells
    on desktop: "when" tag, headline, CTA. Stacks on mobile. */
