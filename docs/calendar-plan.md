@@ -615,6 +615,67 @@ Scaffolding for this lives in `workers/calendar-scraper/src/api-v1-client.js` (u
 
 Bound via `wrangler secret put REDPOINT_TOKEN` etc. — `wrangler.jsonc` already has `observability` on; secrets stay out of source.
 
+## 13. Operational guardrails
+
+### 13a. Rate-limit `/api/events` (TODO — needs dashboard click)
+
+`wrangler.jsonc` cannot declare zone-level Rate Limiting Rules. They live in the Cloudflare dashboard or are managed via the zone-level API. **Apply manually:**
+
+1. Cloudflare dashboard → `mosaicclimbing.com` zone → Security → WAF → Rate limiting rules.
+2. Click **Create rule**.
+3. Field config:
+   - **Rule name:** `mosaic events api`
+   - **Match expression:** `(http.request.uri.path eq "/api/events")` — also add `or (http.request.uri.path eq "/api/events/")` for the trailing-slash variant if you like belt-and-suspenders.
+   - **Characteristics:** IP source address (default)
+   - **Period:** 1 minute
+   - **Requests per period:** **60**
+   - **Action:** Block, with status `429`
+   - **Duration:** 1 minute
+4. Save + deploy.
+
+This caps abuse below the practical cache-amplification ceiling (each MISS triggers 9 upstream GraphQL POSTs; with 60 req/min/IP and a 5-min edge cache, sustained per-IP burn is bounded). The Worker's `caches.default` 5-min `s-maxage` keeps the legitimate path fast.
+
+If the dashboard isn't available right now, the equivalent via API:
+
+```bash
+curl -X POST "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rate_limits" \
+  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "match": {"request": {"url_pattern": "mosaicclimbing.com/api/events"}},
+    "threshold": 60,
+    "period": 60,
+    "action": {"mode": "ban", "timeout": 60, "response": {"content_type": "application/json", "body": "{\"error\":\"rate_limit\"}"}}
+  }'
+```
+
+### 13b. Content Security Policy
+
+Live in `_headers` under `/*` since 2026-05-16. Strict-ish: scripts allow only `'self'` + `cdn.lightwidget.com` + `assets.flodesk.com`. Styles allow `'self'` plus `'unsafe-inline'` because the site uses ~25 inline `style="…"` attributes across forms and inline `<style>` blocks in `climb-with-us.html` and `waiver.html`. The `'unsafe-inline'` for styles is a deliberate trade-off — the alternative (moving every inline style to a class in styles.css, or maintaining sha256 hashes for each value) is high-touch maintenance for low risk on a no-user-input marketing site. Scripts are NOT `'unsafe-inline'` — there are zero executable inline scripts (JSON-LD blocks have `type="application/ld+json"` and are exempt from script-src in modern browsers).
+
+Third-party origins allowlisted by purpose:
+
+| Origin | Reason | Directive |
+|---|---|---|
+| `cdn.lightwidget.com` | Instagram embed iframe + the resizer script in `script.js` | `script-src`, `frame-src` |
+| `assets.flodesk.com` | Flodesk universal.js (mailing-list embed in the footer) | `script-src`, `style-src`, `font-src`, `img-src` |
+| `m.flodesk.com`, `api.flodesk.com` | Flodesk form submission + image hosts | `connect-src`, `img-src` |
+| `formsubmit.co` | Static `<form action>` POSTs + chat widget AJAX | `connect-src`, `form-action` |
+
+If a future page adds a new third-party script (analytics, etc.), the embed will silently fail until its origin is added. Check the browser console for `Refused to load …` CSP violations.
+
+### 13c. Target-size a11y trade-off on busy days (known limitation)
+
+Lighthouse flags WCAG 2.5.8 (target-size) on weeks where 6+ events overlap in time within a single day. Lane-packing splits the day column into ~6 lanes, each ~18.5px wide on a 1280px viewport — below the 24×24 minimum. This is an inherent tension with the brief's "show every event inline, no `+N more`" instruction. **Mobile sidesteps the issue entirely** by switching to the agenda list, where every row is full-width and 44+ px tall.
+
+On desktop, the narrow chips are still mouse-friendly. The remaining concern is keyboard / motor-impaired users on desktop. Options if we ever revisit:
+
+1. Cap lane count at 4 and reintroduce a "+N more" affordance that opens a per-day list — reverses the brief but solves the violation.
+2. Allow the day column to scroll horizontally when overflowing (intrusive UI).
+3. Switch to an agenda view on desktop too when a day exceeds 4 simultaneous events (per-day adaptive layout — fiddly).
+
+Doing none of those for now. Documented here so it's not re-discovered next audit.
+
 ## TL;DR for Chris
 
 - Vendor corrected: **Redpoint HQ** ([redpointhq.com](https://www.redpointhq.com)), not Rock Gym Pro. The `-rgp` slugs were a red herring.
