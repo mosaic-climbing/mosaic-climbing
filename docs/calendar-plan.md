@@ -646,7 +646,88 @@ This deploys on the normal git push — no dashboard click, no separate API call
 
 Combined with the 5-minute `caches.default` `s-maxage`, sustained per-IP load on the upstream is bounded: at most `(60 req/min) × (1 MISS / 5 min) × (9 GraphQL POSTs / MISS) ≈ 110 upstream calls / IP / hour` in the absolute-worst-case where every request is cache-bust-able (it isn't — cache keys strip query strings).
 
-The user is also configuring a **zone-level Rate Limiting Rule** in the Cloudflare dashboard for defense in depth at the edge — that runs ahead of the Worker invocation entirely. The two layers compose: zone-rule blocks abuse at the edge; the binding catches anything that gets through.
+### Zone-level rule (defense in depth, edge-layer)
+
+The Worker binding shipped above is enough for normal abuse, but a **zone-level Rate Limiting Rule** runs ahead of the Worker invocation entirely — useful if you want abuse blocked without consuming any Worker quota.
+
+**Option 1: one-shot script via the Cloudflare API.** Re-runnable; idempotent.
+
+```bash
+CF_API_TOKEN=<token>   # https://dash.cloudflare.com/profile/api-tokens
+                       # permissions: Zone → Zone WAF → Edit
+CF_ZONE_ID=<zone-id>   # from the dashboard's zone overview sidebar
+                       # (32-char hex; mosaicclimbing.com's zone)
+
+./scripts/apply-rate-limit.sh
+```
+
+The script (`scripts/apply-rate-limit.sh`) PUTs to the Ruleset Engine entrypoint for the `http_ratelimit` phase:
+
+```
+PUT https://api.cloudflare.com/client/v4/zones/{zone_id}/rulesets/phases/http_ratelimit/entrypoint
+```
+
+…with a rule shaped like:
+
+```jsonc
+{
+  "description": "mosaic events api — 60 req/min/IP",
+  "expression": "(http.request.uri.path eq \"/api/events\" and http.request.method eq \"GET\")",
+  "action": "block",
+  "action_parameters": {
+    "response": {
+      "status_code": 429,
+      "content_type": "application/json",
+      "content": "{\"error\":\"rate_limit\",\"message\":\"Too many requests. Try again in a minute.\"}"
+    }
+  },
+  "ratelimit": {
+    "characteristics": ["ip.src"],
+    "period": 60,
+    "requests_per_period": 60,
+    "mitigation_timeout": 60,
+    "counting_expression": "(http.request.uri.path eq \"/api/events\")"
+  }
+}
+```
+
+**Option 2: Cloudflare dashboard, click-through.** Same outcome.
+
+1. https://dash.cloudflare.com → select `mosaicclimbing.com` zone.
+2. Sidebar → **Security → WAF → Rate limiting rules**.
+3. **Create rule**:
+   - **Rule name:** `mosaic events api`
+   - **If incoming requests match:** select **Custom filter expression** and paste:
+     `(http.request.uri.path eq "/api/events" and http.request.method eq "GET")`
+   - **Then:**
+     - **Characteristics:** *IP source address* (default)
+     - **Period:** *1 minute*
+     - **Requests per period:** *60*
+     - **Action:** *Block*
+     - **With response type:** *Custom JSON*  →  body `{"error":"rate_limit","message":"Too many requests. Try again in a minute."}`
+     - **Duration:** *1 minute*
+4. **Deploy**.
+
+**Verify** the rule is active:
+
+```bash
+curl -s "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/rulesets/phases/http_ratelimit/entrypoint" \
+  -H "Authorization: Bearer $CF_API_TOKEN" \
+  | jq '.result.rules[] | {description, action, ratelimit}'
+```
+
+**Test the rule** (won't actually block since one curl is well under 60/min; this just confirms the endpoint still works):
+
+```bash
+curl -sI https://mosaicclimbing.com/api/events | head -3
+# HTTP/2 200
+# cache-control: public, s-maxage=300, stale-while-revalidate=600
+# x-cache: HIT
+```
+
+To trigger the rate limit, hammer the endpoint with `for i in {1..100}; do curl …; done` from one IP and watch for `HTTP/2 429`.
+
+The two layers (zone-level + Worker binding) compose cleanly: zone-rule blocks abuse at the edge first; the Worker binding is the second check if anything gets through.
 
 ### 13b. Content Security Policy
 

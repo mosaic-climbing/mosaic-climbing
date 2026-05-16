@@ -350,6 +350,37 @@ a:focus-visible { outline: 2px solid var(--clay); outline-offset: 3px; border-ra
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
+/* Wider container — calendar page uses this so the week grid + its
+   surrounding text actually use the viewport on big monitors. Caps at 96vw
+   so it never butts against the edge on smaller screens. */
+.wrap--wide { max-width: min(1680px, 96vw); }
+
+/* Featured-event row (Summer Camp callout above the week grid). Three cells
+   on desktop: "when" tag, headline, CTA. Stacks on mobile. */
+.ev {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--s-4);
+  padding-block: var(--s-6);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-top: var(--s-5);
+}
+.ev .when {
+  font-family: var(--sans);
+  font-weight: 800;
+  font-size: var(--t-md);
+  letter-spacing: -0.02em;
+  color: var(--clay);
+  font-feature-settings: 'tnum';
+  line-height: 1;
+  text-transform: uppercase;
+}
+.ev h2 { font-size: var(--t-xl); margin: 0; }
+.ev p  { max-width: 60ch; }
+@media (min-width: 800px) {
+  .ev { grid-template-columns: 220px 1fr auto; align-items: center; gap: var(--s-7); }
+}
 .section { padding-block: clamp(4rem, 4rem + 6vw, 9rem); }
 .section-tight { padding-block: clamp(2.5rem, 2.5rem + 4vw, 5rem); }
 .section-bone-deep { background: var(--bone-deep); }
