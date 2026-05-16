@@ -32,10 +32,16 @@
   const HOURS      = HOUR_END - HOUR_START;
   const MOBILE_MQ  = window.matchMedia('(max-width: 720px)');
 
+  // Known categories. Anything else falls back to "event" so a future API
+  // value can never inject an unexpected `cal-chip--<x>` class fragment.
+  const CATEGORIES = new Set(['youth', 'workshop', 'member', 'event']);
+  function safeCategory(c) { return CATEGORIES.has(c) ? c : 'event'; }
+
   const STATE = {
     events: [],
     byDay: new Map(),
-    weekOffsetDays: 0,   // days from "this week's Sunday"
+    weekOffsetDays: 0,    // days from this week's Monday
+    autoAdvanced: false,  // true if we jumped past one or more empty weeks on first load
     updatedAt: null,
   };
 
@@ -53,9 +59,12 @@
     return new Date(y, m - 1, d, hh || 0, mm || 0, ss || 0);
   }
 
+  // Week starts on Monday (matches the convention used by most fitness /
+  // class-schedule UIs). Date.getDay() returns 0=Sun..6=Sat, so we subtract
+  // (getDay()+6)%7 to roll back to the previous Monday.
   function startOfWeek(d) {
     const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    out.setDate(out.getDate() - out.getDay());
+    out.setDate(out.getDate() - ((out.getDay() + 6) % 7));
     return out;
   }
 
@@ -108,7 +117,7 @@
   }
 
   function categoryLabel(cat) {
-    return ({ youth: 'Youth program', workshop: 'Class', member: 'Member event', event: 'Event' })[cat] || 'Event';
+    return ({ youth: 'Youth program', workshop: 'Class', member: 'Member event', event: 'Event' })[safeCategory(cat)] || 'Event';
   }
 
   function eventStartHours(ev) {
@@ -183,6 +192,33 @@
     return annotated;
   }
 
+  function weekHasEvents(weekStart) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      if ((STATE.byDay.get(dayIso(d)) || []).length > 0) return true;
+    }
+    return false;
+  }
+
+  // If the current week is empty AND we haven't moved yet, advance to the
+  // soonest week that does have events (lookahead capped at the available data).
+  function autoAdvanceIfEmpty() {
+    if (STATE.weekOffsetDays !== 0) return;
+    if (weekHasEvents(viewWeekStart())) return;
+    const thisWeekStart = viewWeekStart();
+    // Look up to ~26 weeks (6 months) ahead. Data window is 6 months.
+    for (let w = 1; w <= 26; w++) {
+      const candidate = new Date(thisWeekStart);
+      candidate.setDate(candidate.getDate() + w * 7);
+      if (weekHasEvents(candidate)) {
+        STATE.weekOffsetDays = w * 7;
+        STATE.autoAdvanced = true;
+        return;
+      }
+    }
+  }
+
   function render() {
     if (!grid) return;
     grid.innerHTML = '';
@@ -203,7 +239,15 @@
       renderGrid(days, today);
     }
 
-    if (statusEl) statusEl.hidden = true;
+    if (statusEl) {
+      if (STATE.autoAdvanced && STATE.weekOffsetDays > 0) {
+        statusEl.textContent = `No events scheduled this week. Showing the next week with events — ${fmtWeekRange(weekStart)}.`;
+        statusEl.hidden = false;
+      } else {
+        statusEl.hidden = true;
+        statusEl.textContent = '';
+      }
+    }
     if (metaEl) {
       if (STATE.updatedAt) {
         const dt = new Date(STATE.updatedAt);
@@ -321,7 +365,7 @@
   function buildChip(ev, compact) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = `cal-chip cal-chip--${ev.category || 'event'}`
+    btn.className = `cal-chip cal-chip--${safeCategory(ev.category)}`
       + (compact ? ' cal-chip--agenda' : ' cal-chip--block');
     btn.dataset.evId = ev.id;
     btn.dataset.evStart = ev.start;
@@ -407,9 +451,14 @@
     if (typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
   }
 
-  prevBtn  && prevBtn.addEventListener('click',  () => { STATE.weekOffsetDays -= 7; render(); });
-  nextBtn  && nextBtn.addEventListener('click',  () => { STATE.weekOffsetDays += 7; render(); });
-  todayBtn && todayBtn.addEventListener('click', () => { STATE.weekOffsetDays = 0; render(); });
+  function userNav(delta) {
+    STATE.weekOffsetDays += delta;
+    STATE.autoAdvanced = false;   // dismiss the auto-advance hint once user takes over
+    render();
+  }
+  prevBtn  && prevBtn.addEventListener('click',  () => userNav(-7));
+  nextBtn  && nextBtn.addEventListener('click',  () => userNav(7));
+  todayBtn && todayBtn.addEventListener('click', () => { STATE.weekOffsetDays = 0; STATE.autoAdvanced = false; render(); });
 
   if (modal) {
     modalClose && modalClose.addEventListener('click', closeModal);
@@ -438,6 +487,7 @@
       STATE.events = Array.isArray(payload.events) ? payload.events : [];
       STATE.updatedAt = payload.meta && payload.meta.updatedAt;
       STATE.byDay = indexByDay(STATE.events);
+      autoAdvanceIfEmpty();
       render();
     })
     .catch((err) => {

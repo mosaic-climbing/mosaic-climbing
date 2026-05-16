@@ -1,0 +1,23 @@
+# Server-side / dev-tool files that should not be served as static assets.
+# Cloudflare Workers Assets respects this list during upload.
+
+# Worker source (already bundled into main; serving the raw files would
+# leak the same content the bundle already runs, but cleaner to omit).
+src/
+
+# Dev scripts (capture-calendar-input.mjs + harden-cloudflare.sh)
+scripts/
+
+# Planning docs — internal, not for public consumption
+docs/
+
+# Worker config
+wrangler.jsonc
+
+# Editor / Claude metadata
+.claude/
+
+# Migration + handoff docs at the root
+CLAUDE.md
+MIGRATION.md
+README.md

@@ -72,7 +72,7 @@ async function fetchOneWindow({ startDate, endDate }) {
       'Accept': 'application/json',
       // Identify ourselves honestly — RGP support has the URL if they want to
       // reach out. The static site is a known property of the same gym.
-      'User-Agent': 'mosaic-calendar-scraper/1.0 (+https://mosaicclimbing.com)',
+      'User-Agent': 'mosaic-climbing-events-api/1.0 (+https://mosaicclimbing.com)',
     },
     body: JSON.stringify(body),
   });
