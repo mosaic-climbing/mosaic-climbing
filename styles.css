@@ -1551,14 +1551,30 @@ a:hover { color: var(--clay); }
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Wrap at word boundaries; break only words too long for the chip width. */
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: auto;
+  /* Two-line clamp keeps wrap output tidy on narrow chips; tall chips get
+     room from the chip itself, not from a higher line-clamp. */
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  line-clamp: 3;
+  line-clamp: 2;
 }
 .cal-chip--block { min-height: 24px; }
 .cal-chip--block .cal-chip__title { order: 1; }
 .cal-chip--block .cal-chip__time { order: 2; }
+
+/* In a 3+-lane cluster every chip is ≤ ~35% of a day column. Drop padding +
+   font so titles like "Weight Lifting Sign Up" don't fragment mid-word.
+   JS sets the .cal-chip--narrow class when laneCount >= 3. */
+.cal-chip--narrow {
+  padding: 2px 4px;
+  font-size: 10px;
+}
+.cal-chip--narrow .cal-chip__time { font-size: 9px; font-weight: 700; }
+.cal-chip--narrow .cal-chip__title { font-size: 10px; line-height: 1.15; }
 
 .cal-chip--youth { background: var(--clay-deep); }
 .cal-chip--youth:hover { background: #14293a; }
