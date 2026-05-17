@@ -756,6 +756,172 @@ On desktop, the narrow chips are still mouse-friendly. The remaining concern is 
 
 Doing none of those for now. Documented here so it's not re-discovered next audit.
 
+## 14. Event discovery + per-course slugs (design pass — not yet shipped)
+
+### 14a. Scope, and how this differs from PR #11
+
+**PR #11** (in flight: `claude/automate-slug-discovery`) automates the **plan-level vendor slug**: it asks Redpoint's storefront for `plans { id, slug }` and uses each session's `planId` to build the Register-button URL (`portal.mosaicclimbing.com/mos/programs/<vendor-slug>`). That slug is *Redpoint's*. It is used to send the user **off our site to register**. It has no public surface area on mosaicclimbing.com.
+
+**§14** is a separate, additive layer: **per-course slugs that we mint, persist, and own.** These power:
+
+- Shareable URLs on *our* domain (e.g. `mosaicclimbing.com/events/top-rope-class`).
+- A discovery feedback loop — when a new `courseId` shows up in the scrape, we alert ourselves (so Nicole and Chris find out about new offerings without watching the dashboard).
+- SEO: each event slug becomes a distinct URL we can list in `sitemap.xml`.
+
+They are independent — PR #11 doesn't depend on §14, and §14 doesn't replace PR #11. The vendor slug stays in the Register CTA; the Mosaic slug becomes the public URL.
+
+### 14b. Slug rules
+
+Input: `publicTitle` (the storefront's display name) at the moment a `courseId` is first seen. Output: a slug stored permanently against that `courseId`.
+
+```
+slugify(title):
+  1. lowercase, NFKD-normalize, strip diacritics
+  2. replace any run of non-[a-z0-9] with "-"
+  3. trim leading/trailing "-"
+  4. truncate to 60 chars; re-trim trailing "-"
+  5. if empty after all that → "event"   (degenerate-title fallback)
+```
+
+Examples:
+
+| publicTitle | slug |
+|---|---|
+| `Top Rope Class` | `top-rope-class` |
+| `Yoga Sign Up` | `yoga-sign-up` |
+| `Strength and Performance Training for Climbers with vital Force` | `strength-and-performance-training-for-climbers-with-vital` |
+| `Explorers: Mondays` | `explorers-mondays` |
+| `Member Meet-Up` | `member-meet-up` |
+| `Mosaic Summer Camp '26` | `mosaic-summer-camp-26` |
+
+**Collisions:** if the candidate slug is already in the reverse index pointing to a *different* `courseId`, append `-2`, then `-3`, etc., until free. Conservative — keeps URLs readable, doesn't introduce hash entropy.
+
+**Immutability:** once minted, a slug never changes. If Redpoint renames `Top Rope Class` → `Intro Top Rope` next year, the courseId stays the same, the slug stays `top-rope-class`, the URL keeps working. The displayed title in the UI updates because it's read fresh from `publicTitle` on every scrape.
+
+### 14c. Storage: a new KV namespace `COURSE_SLUGS`
+
+Bind in `wrangler.jsonc`:
+
+```jsonc
+"kv_namespaces": [
+  { "binding": "COURSE_SLUGS", "id": "<created via: wrangler kv namespace create COURSE_SLUGS>" }
+]
+```
+
+Two key shapes (kept separate so we can read either direction in one op):
+
+| Key | Value | Purpose |
+|---|---|---|
+| `course:<courseId>` | `{ slug, title, category, firstSeenAt, lastSeenAt }` | Forward lookup. Title and category are denormalized so an `/events/<slug>` Worker can render without re-scraping. |
+| `slug:<slug>` | `<courseId>` (raw string) | Reverse lookup, used for collision check and for `/events/<slug>` → courseId resolution. |
+
+Write-once for `course:*` except `lastSeenAt` (touched per scrape) and `title`/`category` (refreshed if they change upstream). Reverse index `slug:*` is strictly write-once.
+
+### 14d. Discovery / minting flow
+
+Wired into the cache-miss path in `events-api.js`, after `fetchAllRows` and before the response goes out:
+
+```
+1. courseIds = unique set from the just-scraped rows
+2. known = KV.list({ prefix: "course:" })           // one op, paginated if >1k
+   → known.set = { courseId, ... }
+3. new = courseIds − known.set
+4. for each new courseId:
+     mint slug (with collision retry against slug:* lookups)
+     KV.put("course:<id>", JSON.stringify({...}))
+     KV.put("slug:<slug>", courseId)
+     queue notification (see §14e)
+5. for each courseId in (courseIds ∩ known.set):
+     KV.put("course:<id>", ...) with refreshed lastSeenAt   (cheap, idempotent)
+6. attach `slug` to each event in payload (read from cache built in step 1+2)
+7. ctx.waitUntil(send notifications)
+```
+
+Steps 4–7 all run inside `ctx.waitUntil()` so the response goes out without waiting on KV writes or webhook fan-out. KV reads in step 2 are blocking — but a single `KV.list` of ~50 courses is single-digit ms.
+
+**Concurrency**: if two cache-miss requests race, both will mint a slug for the same new courseId. KV is eventually consistent and `put` is last-write-wins, so the second slug overwrites the first — different slugs for the same course, only one referenced by the live payload, the orphan sits unused. Acceptable for the volume. If we ever care, switch to Durable Objects for the minting step.
+
+### 14e. Notification on new courses
+
+**Recommended: GitHub issue via the repo's REST API.** No new external service, fully auditable, free.
+
+- Secret: `GITHUB_NOTIFY_TOKEN` — fine-grained PAT scoped to `mosaic-climbing/mosaic-climbing` with `issues: write` only. Stored via `wrangler secret put`.
+- Label: `calendar-discovery` (auto-created on first use).
+- Title: `[calendar] New course: <publicTitle>`
+- Body:
+  ```
+  Discovered <date>.
+  - courseId: <id>
+  - slug: <slug>  →  https://mosaicclimbing.com/events/<slug>
+  - first session: <ISO datetime>
+  - category (heuristic): <category>
+  - shortSummary (first 200 chars): <excerpt>
+
+  If this should not appear on the public calendar, add the plan
+  slug to EXCLUDE_PLAN_SLUGS in src/calendar-config.js.
+  ```
+- Volume control: one issue per new courseId per ever (we never re-fire — KV remembers).
+- **First-deploy seeding:** the very first scrape after enabling KV will see ~13 "new" courses (everything in the catalog). To avoid spamming the issue tracker, gate notifications on a `SEEDED` KV key — first scrape sets `SEEDED=true` and skips notifications; subsequent scrapes notify normally.
+
+**Slack webhook** is also a fine alternative if a `#mosaic-deploys` (or similar) channel exists — single POST, no auth juggling beyond the webhook URL. Open question in §14j.
+
+### 14f. Surfacing slugs in `/api/events`
+
+Each event object in the response gains one field:
+
+```jsonc
+{
+  "id": "Q291cnNl…",        // courseId (existing)
+  "slug": "top-rope-class", // NEW — minted/persisted slug
+  // … rest unchanged …
+}
+```
+
+Backwards-compatible additive change. `calendar.js` doesn't have to read it on day one; the field unblocks downstream link-building when we ship the routing piece (§14g).
+
+### 14g. URL routing — OPEN QUESTION
+
+Three approaches, escalating in effort:
+
+**(a) Query param on the existing calendar page** — `/calendar?event=<slug>`
+- `calendar.js` reads `URLSearchParams` on load; if `event=` is set, find the matching event, open the modal pre-populated.
+- **Pros:** zero new infra, ships in ~50 lines of JS, no Worker route changes.
+- **Cons:** SEO-wise it's still one page from Google's perspective (query params don't yield distinct indexed pages). Past events 404 silently — the modal just doesn't open if the slug isn't in the current `/api/events`.
+
+**(b) Dedicated per-event Worker route** — `/events/<slug>` returns a full HTML page
+- Worker resolves `<slug>` → `courseId` via KV → fetches event detail → renders SSR HTML with proper `<title>`, `<meta description>`, JSON-LD `Event`, OG tags, and a link back to the calendar.
+- **Pros:** full SEO — each event is its own crawlable URL. Best for shareability (link previews render).
+- **Cons:** Worker now does HTML synthesis (templating in JS, or a small string template). More code. Need to decide what an `/events/<slug>` page looks like visually (does it embed the modal? Inherit the site header/footer? A new "event detail" page template?).
+
+**(c) Hybrid — Worker stub for SEO, JS-driven detail UI** — `/events/<slug>` returns a minimal HTML page with the correct `<title>`, `<meta description>`, JSON-LD, OG tags, *and* a `<script>` that redirects to `/calendar?event=<slug>` (or opens the modal inline)
+- **Pros:** crawlers and link-preview bots get full per-event metadata; humans land on the calendar with the modal open.
+- **Cons:** double-load for users; slight UX jank. More moving parts than (a), less work than (b).
+
+**Recommend (a) for MVP** — ship the slug minting, the persistence, the `slug` field in the API, the GitHub issue notifications, and the query-param routing. That covers the discovery + sharability brief. If SEO becomes a priority later, upgrade to (b) or (c) — the slug data model is already in KV, no migration needed.
+
+### 14h. Sitemap
+
+Downstream of §14g.
+
+- If routing is **(a)**, sitemap stays unchanged — query strings don't earn distinct sitemap entries (Google folds them).
+- If routing is **(b)** or **(c)**, add a `/sitemap-events.xml` Worker route that lists every active event slug. Reference it from the main `sitemap.xml` via `<sitemap>` index entry, or just register both in `robots.txt` and Google Search Console.
+
+### 14i. Past events
+
+`/api/events` only covers the next 6 months. When a course's last session is in the past, the next scrape drops it from the payload. Two policies:
+
+- **MVP policy (recommended):** `/events/<slug>` lookups for slugs that no longer appear in `/api/events` return **410 Gone** (or 404 if 410 looks too aggressive). The KV `course:*` and `slug:*` entries stay for posterity; we just don't serve them.
+- **Future policy:** persist the last-known full event detail in KV so historical URLs keep working forever. Adds storage cost and complexity (especially around recurring vs one-time events) — defer until someone actually links to a past event and complains.
+
+### 14j. Open questions
+
+1. **Routing approach** — (a), (b), or (c) above? (Recommend (a) for MVP.)
+2. **Notification channel** — GitHub issue or Slack webhook? If Slack: provide the webhook URL.
+3. **First-deploy seeding** — confirm we skip notifications on the very first scrape (~13 issues at once would be noisy).
+4. **Past events** — 410/404 on missing slug for MVP, or invest in persistence now?
+5. **Slug length** — 60-char cap OK? Some Redpoint titles run long (`Strength and Performance Training for Climbers with vital Force` truncates to `strength-and-performance-training-for-climbers-with-vital`). Cap could be 40 or 80; 60 is a reasonable middle.
+6. **What about courseIds whose plan is in `EXCLUDE_PLAN_SLUGS`?** — they never reach normalize, so they never get a slug minted. Consistent with the intent (don't expose those publicly). Confirm no edge case.
+
 ## TL;DR for Chris
 
 - Vendor corrected: **Redpoint HQ** ([redpointhq.com](https://www.redpointhq.com)), not Rock Gym Pro. The `-rgp` slugs were a red herring.
