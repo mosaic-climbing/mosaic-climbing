@@ -758,19 +758,26 @@ Doing none of those for now. Documented here so it's not re-discovered next audi
 
 ## 14. Event discovery + per-course slugs (design pass — not yet shipped)
 
-### 14a. Scope, and how this differs from PR #11
+### 14a. Scope
 
-**PR #11** (in flight: `claude/automate-slug-discovery`) automates the **plan-level vendor slug**: it asks Redpoint's storefront for `plans { id, slug }` and uses each session's `planId` to build the Register-button URL (`portal.mosaicclimbing.com/mos/programs/<vendor-slug>`). That slug is *Redpoint's*. It is used to send the user **off our site to register**. It has no public surface area on mosaicclimbing.com.
+Three tightly-related but independently-shippable workstreams, locked in 2026-05-16 after design review:
 
-**§14** is a separate, additive layer: **per-course slugs that we mint, persist, and own.** These power:
+| PR | Workstream | What it does |
+|---|---|---|
+| **A** | Periodic-scrape allowlist + runtime plan-slug map | Replace any static plan whitelist / blocklist with a CI-driven allowlist sourced from the portal SPA itself. Also pull plan slugs from `StorefrontPlansQuery` at request time so the Register-button URL deep-links to `portal.../mos/programs/<vendor-slug>` instead of `/mos/n/calendar`. Source of truth: what Mosaic's own portal calendar exposes. |
+| **B** | Per-course slugs + KV + routing | Mint our own slugs (e.g. `top-rope-class`), persist them in a new `COURSE_SLUGS` KV namespace, surface a `slug` field on every event in `/api/events`, add `?event=<slug>` query-param routing in `calendar.js` to open the modal pre-populated, and add `/api/events/<slug>` for resolving archived courses. |
+| **C** | New-course alerts | When a new `courseId` shows up in a scrape, open a GitHub issue in `mosaic-climbing/mosaic-climbing` labeled `calendar-discovery` so Nicole and Chris find out without watching the dashboard. Builds on PR B's KV. |
 
-- Shareable URLs on *our* domain (e.g. `mosaicclimbing.com/events/top-rope-class`).
-- A discovery feedback loop — when a new `courseId` shows up in the scrape, we alert ourselves (so Nicole and Chris find out about new offerings without watching the dashboard).
-- SEO: each event slug becomes a distinct URL we can list in `sitemap.xml`.
+**Two layers of "slug" to keep straight** (they're distinct and both useful):
 
-They are independent — PR #11 doesn't depend on §14, and §14 doesn't replace PR #11. The vendor slug stays in the Register CTA; the Mosaic slug becomes the public URL.
+1. **Vendor plan slug** — Redpoint's slug for a plan (e.g. `top-rope-class-2`). We use it to build the off-site Register URL. PR A introduces the runtime lookup so we don't maintain a hand-curated title→slug map. This is what PR #11 was solving and what PR A subsumes.
+2. **Mosaic course slug** — *our* slug, minted from `publicTitle`, owned in our KV. Used for `mosaicclimbing.com/events/<slug>`. Introduced in PR B.
 
-### 14b. Slug rules
+**Held: PR #11** (`claude/automate-slug-discovery`). PR #11 used a small `EXCLUDE_PLAN_SLUGS` blocklist over an "all plans" set. Functionally fine, but PR A inverts the model to an allowlist sourced from the portal SPA — no manual blocklist to maintain, and "if it's not on Mosaic's public calendar, it doesn't appear on ours" becomes a one-line invariant. PR A absorbs PR #11's keeper code (the `StorefrontPlansQuery` runtime fetch + planId→slug map) and discards the blocklist piece.
+
+The §14 sections below describe PRs A, B, and C together. PR A ships first (smallest, replaces the in-flight #11). PR B introduces KV; PR C builds on B.
+
+### 14b. Slug rules (PR B)
 
 Input: `publicTitle` (the storefront's display name) at the moment a `courseId` is first seen. Output: a slug stored permanently against that `courseId`.
 
@@ -812,10 +819,10 @@ Two key shapes (kept separate so we can read either direction in one op):
 
 | Key | Value | Purpose |
 |---|---|---|
-| `course:<courseId>` | `{ slug, title, category, firstSeenAt, lastSeenAt }` | Forward lookup. Title and category are denormalized so an `/events/<slug>` Worker can render without re-scraping. |
-| `slug:<slug>` | `<courseId>` (raw string) | Reverse lookup, used for collision check and for `/events/<slug>` → courseId resolution. |
+| `course:<courseId>` | `{ slug, title, category, description, capacityText, instructorText, firstSeenAt, lastSeenAt }` | Forward lookup + persistent course identity. Denormalized fields are sufficient to render a meaningful modal/page when the course is no longer in the active `/api/events` window (see §14i). |
+| `slug:<slug>` | `<courseId>` (raw string) | Reverse lookup, used for collision check and for `/api/events/<slug>` → courseId resolution. |
 
-Write-once for `course:*` except `lastSeenAt` (touched per scrape) and `title`/`category` (refreshed if they change upstream). Reverse index `slug:*` is strictly write-once.
+Write-once for `slug:*`. For `course:*`: `slug` and `firstSeenAt` are write-once; `title`, `category`, `description`, `capacityText`, `instructorText`, `lastSeenAt` refresh on every scrape that re-sees the course (so the persisted snapshot stays current as long as the course is active).
 
 ### 14d. Discovery / minting flow
 
@@ -841,9 +848,7 @@ Steps 4–7 all run inside `ctx.waitUntil()` so the response goes out without wa
 
 **Concurrency**: if two cache-miss requests race, both will mint a slug for the same new courseId. KV is eventually consistent and `put` is last-write-wins, so the second slug overwrites the first — different slugs for the same course, only one referenced by the live payload, the orphan sits unused. Acceptable for the volume. If we ever care, switch to Durable Objects for the minting step.
 
-### 14e. Notification on new courses
-
-**Recommended: GitHub issue via the repo's REST API.** No new external service, fully auditable, free.
+### 14e. Notification on new courses (PR C) — DECIDED: GitHub issue
 
 - Secret: `GITHUB_NOTIFY_TOKEN` — fine-grained PAT scoped to `mosaic-climbing/mosaic-climbing` with `issues: write` only. Stored via `wrangler secret put`.
 - Label: `calendar-discovery` (auto-created on first use).
@@ -852,18 +857,17 @@ Steps 4–7 all run inside `ctx.waitUntil()` so the response goes out without wa
   ```
   Discovered <date>.
   - courseId: <id>
-  - slug: <slug>  →  https://mosaicclimbing.com/events/<slug>
+  - slug: <slug>  →  https://mosaicclimbing.com/calendar?event=<slug>
   - first session: <ISO datetime>
   - category (heuristic): <category>
   - shortSummary (first 200 chars): <excerpt>
 
-  If this should not appear on the public calendar, add the plan
-  slug to EXCLUDE_PLAN_SLUGS in src/calendar-config.js.
+  If this course should NOT appear on the public marketing-site calendar,
+  remove its plan from the portal's public calendar view — that flows
+  through to PR A's allowlist on the next CI run. No code change needed.
   ```
 - Volume control: one issue per new courseId per ever (we never re-fire — KV remembers).
-- **First-deploy seeding:** the very first scrape after enabling KV will see ~13 "new" courses (everything in the catalog). To avoid spamming the issue tracker, gate notifications on a `SEEDED` KV key — first scrape sets `SEEDED=true` and skips notifications; subsequent scrapes notify normally.
-
-**Slack webhook** is also a fine alternative if a `#mosaic-deploys` (or similar) channel exists — single POST, no auth juggling beyond the webhook URL. Open question in §14j.
+- **First-deploy seeding:** the very first scrape after enabling KV will see ~13 "new" courses (everything in the catalog). Gate notifications on a `meta:seeded` KV key — first scrape sets it true and skips notifications; subsequent scrapes notify normally.
 
 ### 14f. Surfacing slugs in `/api/events`
 
@@ -879,9 +883,9 @@ Each event object in the response gains one field:
 
 Backwards-compatible additive change. `calendar.js` doesn't have to read it on day one; the field unblocks downstream link-building when we ship the routing piece (§14g).
 
-### 14g. URL routing — OPEN QUESTION
+### 14g. URL routing — DECIDED: query param (option a)
 
-Three approaches, escalating in effort:
+Three approaches were on the table:
 
 **(a) Query param on the existing calendar page** — `/calendar?event=<slug>`
 - `calendar.js` reads `URLSearchParams` on load; if `event=` is set, find the matching event, open the modal pre-populated.
@@ -897,7 +901,9 @@ Three approaches, escalating in effort:
 - **Pros:** crawlers and link-preview bots get full per-event metadata; humans land on the calendar with the modal open.
 - **Cons:** double-load for users; slight UX jank. More moving parts than (a), less work than (b).
 
-**Recommend (a) for MVP** — ship the slug minting, the persistence, the `slug` field in the API, the GitHub issue notifications, and the query-param routing. That covers the discovery + sharability brief. If SEO becomes a priority later, upgrade to (b) or (c) — the slug data model is already in KV, no migration needed.
+**Decision: (a).** Ship slug minting + persistence + the new `slug` field in `/api/events` + GitHub issue notifications + query-param routing. Covers the discovery + sharability brief. If SEO becomes a priority later, the slug data model is already in KV — upgrade to (b) or (c) without migration.
+
+Because (a) keeps the modal-based UX, `calendar.js` needs to handle "modal-on-load" when `?event=<slug>` is present. Resolution order: first try the slug in the just-fetched `/api/events` payload (the common case — active events); if absent, fall back to `GET /api/events/<slug>` (a new single-event lookup that hits KV including archived courses — see §14i).
 
 ### 14h. Sitemap
 
@@ -906,21 +912,71 @@ Downstream of §14g.
 - If routing is **(a)**, sitemap stays unchanged — query strings don't earn distinct sitemap entries (Google folds them).
 - If routing is **(b)** or **(c)**, add a `/sitemap-events.xml` Worker route that lists every active event slug. Reference it from the main `sitemap.xml` via `<sitemap>` index entry, or just register both in `robots.txt` and Google Search Console.
 
-### 14i. Past events
+### 14i. Past events (PR B) — DECIDED: persist forever via KV
 
-`/api/events` only covers the next 6 months. When a course's last session is in the past, the next scrape drops it from the payload. Two policies:
+`/api/events` only covers the next 6 months. When a course's last session is in the past, the next scrape drops it from the payload — but the `course:<courseId>` entry in KV stays, with the last-known `title`/`category`/`description`/`capacityText`/`instructorText` snapshot. That snapshot is enough to render a meaningful modal for a stale URL.
 
-- **MVP policy (recommended):** `/events/<slug>` lookups for slugs that no longer appear in `/api/events` return **410 Gone** (or 404 if 410 looks too aggressive). The KV `course:*` and `slug:*` entries stay for posterity; we just don't serve them.
-- **Future policy:** persist the last-known full event detail in KV so historical URLs keep working forever. Adds storage cost and complexity (especially around recurring vs one-time events) — defer until someone actually links to a past event and complains.
+**Resolution endpoint: `GET /api/events/<slug>`** (new Worker route, lives in `src/events-api.js` alongside `/api/events`):
 
-### 14j. Open questions
+1. `KV.get("slug:<slug>")` → courseId (or 404 if not found).
+2. `KV.get("course:<courseId>")` → the persisted snapshot.
+3. Look up live session timings from the in-flight `/api/events` payload (cache hit). If the course is active: return `{ ...snapshot, sessions: [...current sessions...], status: "active" }`. If absent from the active payload: return `{ ...snapshot, sessions: [], status: "archived" }`.
+4. Cache the response: active → 5 min (same as `/api/events`); archived → 24 h (rarely changes).
 
-1. **Routing approach** — (a), (b), or (c) above? (Recommend (a) for MVP.)
-2. **Notification channel** — GitHub issue or Slack webhook? If Slack: provide the webhook URL.
-3. **First-deploy seeding** — confirm we skip notifications on the very first scrape (~13 issues at once would be noisy).
-4. **Past events** — 410/404 on missing slug for MVP, or invest in persistence now?
-5. **Slug length** — 60-char cap OK? Some Redpoint titles run long (`Strength and Performance Training for Climbers with vital Force` truncates to `strength-and-performance-training-for-climbers-with-vital`). Cap could be 40 or 80; 60 is a reasonable middle.
-6. **What about courseIds whose plan is in `EXCLUDE_PLAN_SLUGS`?** — they never reach normalize, so they never get a slug minted. Consistent with the intent (don't expose those publicly). Confirm no edge case.
+`calendar.js`, when handling `?event=<slug>`:
+
+1. Find the slug in the just-fetched `/api/events` payload. If hit → open the modal.
+2. If miss → fetch `/api/events/<slug>`. If hit → open the modal with an "Past event" badge and no Register button. If 404 → silently leave the URL alone, no error.
+
+Storage growth: ~500 bytes/course × growth rate. At Mosaic's pace (a handful of new courses per year), this is bounded by the KV namespace's 1 GB cap for decades.
+
+### 14j. Decisions (locked-in 2026-05-16)
+
+| Question | Decision |
+|---|---|
+| Routing for `?event=<slug>` | **(a) Query param**, modal-on-load in `calendar.js`. |
+| Notification channel | **GitHub issue** in `mosaic-climbing/mosaic-climbing`, label `calendar-discovery`. |
+| First-deploy seeding | **Skip notifications** on first scrape via `meta:seeded` KV gate. |
+| Past events | **Persist forever** in KV (`course:<id>` snapshot) + new `/api/events/<slug>` resolution route. |
+| Slug length cap | **60 chars**, truncate cleanly + trim trailing `-`. |
+| Plan-level filtering | **Periodic-scrape allowlist** (PR A, §14k below), not a hand-curated blocklist. |
+| Excluded-plan courseIds | Never reach normalize → never get a slug minted. Consistent. No special case needed. |
+
+### 14k. Periodic-scrape plan allowlist (PR A)
+
+**Source of truth for "what should appear on our calendar": the portal SPA itself.** Mosaic curates `https://portal.mosaicclimbing.com/mos/n/calendar`; whatever plans show up there are the plans we publish. No hand-maintained blocklist, no judgment calls about what's "admin-only" vs "public" — we mirror Mosaic's curation.
+
+**Mechanism**: a scheduled GitHub Action runs `scripts/capture-calendar-input.mjs` (Playwright headless Chromium against the portal SPA), extracts the `planId[]` from the intercepted `StorefrontCalendarQuery` POST, and updates `src/calendar-config.js` if the set has drifted from what's committed. When it has drifted, the Action opens a PR with the diff (so Chris reviews before the marketing site reflects the change).
+
+```yaml
+# .github/workflows/calendar-allowlist.yml
+on:
+  schedule: [{ cron: "13 4 * * *" }]  # daily 04:13 UTC — pre-business hours
+  workflow_dispatch: {}               # manual re-trigger button
+```
+
+Workflow steps:
+
+1. Install Playwright + Chromium in CI.
+2. Run `node scripts/capture-calendar-input.mjs --emit=planids` (new flag) — prints sorted planId array to stdout.
+3. Compare against `PORTAL_VISIBLE_PLAN_IDS` in `src/calendar-config.js` (or a sidecar JSON file).
+4. If unchanged: exit clean.
+5. If changed: write the new array, commit, push to a branch (`bot/calendar-allowlist-yyyymmdd`), open a PR with the diff in the body.
+
+**Why a PR, not a direct push to main:**
+- A drift in planIds is a *signal* worth seeing — could be Nicole adding a new public program (great, merge) OR a portal misconfig (don't merge). Human in the loop.
+- Each merged PR doubles as the "new course" notification PR C provides at the courseId level — at the plan level the allowlist diff already tells the story.
+
+**Runtime path** (in the Worker, replacing PR #11's blocklist filter):
+- `src/scrape.js` still calls `StorefrontPlansQuery` for the `planId → slug` map (so the Register URL deep-links correctly — keeps the keeper code from PR #11).
+- The calendar fan-out uses `PORTAL_VISIBLE_PLAN_IDS` directly. No `EXCLUDE_PLAN_SLUGS` involved.
+
+**Trade-off vs the blocklist approach:**
+- ➕ Zero manual filtering work; Mosaic's portal curation is authoritative.
+- ➕ Drift is auditable via PR history.
+- ➕ "If it's not on the portal calendar, it doesn't appear on ours" is a one-line invariant.
+- ➖ New programs Nicole publishes take up to one CI cycle (~24 h) to appear on the marketing calendar, vs ~5 min (next cache miss) with the blocklist. Acceptable for a marketing calendar.
+- ➖ Adds CI infrastructure: Playwright in GitHub Actions (works fine; we already use Playwright locally for the capture script).
 
 ## TL;DR for Chris
 
