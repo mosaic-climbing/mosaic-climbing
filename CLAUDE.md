@@ -50,22 +50,34 @@ src/                    Worker source (bundled by Workers Builds on push)
   worker.js             entry: routes /api/events, delegates rest to ASSETS
   events-api.js         GET /api/events handler — rate limit, 5-min cache,
                         upstream fan-out, error handling
-  scrape.js             month-windowed POSTs to Redpoint HQ storefront
-                        GraphQL (StorefrontCalendarQuery)
-  normalize.js          rphq row → events.json row; builds deep-link URLs
-                        via TITLE_TO_PROGRAM_SLUG
-  calendar-config.js    vendor knobs: CALENDAR_INPUT_EXTRA (planId
-                        whitelist), CATEGORY_RULES, TITLE_TO_PROGRAM_SLUG
+  scrape.js             StorefrontPlansQuery (for planId→slug map) +
+                        month-windowed StorefrontCalendarQuery in parallel
+  normalize.js          rphq row → events.json row; deep-link URLs use the
+                        planId → slug map returned by the plans query
+  calendar-config.js    vendor knobs: CALENDAR_INPUT_EXTRA (facilityId
+                        only), PLANS_PAGE_SIZE, CATEGORY_RULES
+  portal-visible-plan-ids.js   AUTO-GENERATED allowlist of plan IDs that
+                               Mosaic's portal calendar SPA itself queries
+                               for. Regenerated daily by the
+                               calendar-allowlist GitHub Action (PRs on
+                               drift). Don't hand-edit.
 scripts/
   harden-cloudflare.sh        one-shot zone hardening (SSL/HTTP3/etc.) —
                               see Deploy
-  capture-calendar-input.mjs  Playwright dev tool — re-captures the
-                              CALENDAR_INPUT_EXTRA from the live portal
-                              (see Events calendar → Maintenance)
+  capture-calendar-input.mjs  Playwright tool that intercepts the portal
+                              SPA's StorefrontCalendarQuery. Two modes:
+                              (a) verbose stdout for ad-hoc inspection;
+                              (b) --emit=planids --write=… for the
+                              calendar-allowlist workflow.
   package.json + node_modules dev-only (playwright). Not deployed.
 docs/calendar-plan.md   Full design + investigation log for /calendar
 .github/workflows/cloudflare-harden.yml    manual-trigger GitHub Action
                                            wrapping the harden script
+.github/workflows/calendar-allowlist.yml   daily scheduled Action that
+                                           runs the Playwright capture and
+                                           PRs portal-visible-plan-ids.js
+                                           when the portal SPA's filter
+                                           drifts
 MIGRATION.md            Wix → Cloudflare DNS + registrar cutover playbook
 favicon.ico, favicon-32.png, favicon-192.png, apple-touch-icon.png
 ```
@@ -135,38 +147,41 @@ calendar.html loads
   → calendar.js fetches /api/events
     → mosaic-climbing Worker (src/worker.js)
       → caches.default check (5 min TTL)
-        → on MISS: src/scrape.js fan-out to portal.../graphql-public
-                   (9 month-windows in parallel, 21-day chunks because
-                    the storefront rejects longer ranges with
-                    "Whoops! Please choose a short time frame.")
+        → on MISS: src/scrape.js fans out in parallel:
+              - StorefrontPlansQuery → planId → vendor-slug map (for
+                building the chip's Register CTA URL)
+              - StorefrontCalendarQuery × 9 windows (21-day chunks; the
+                storefront rejects longer ranges with "Whoops! Please
+                choose a short time frame."), filtered to the
+                PORTAL_VISIBLE_PLAN_IDS allowlist
         → src/normalize.js shapes each row into the chip shape
-          (ISO-T dates, HTML-stripped description, slug-deep-link URL,
-          allowlist-validated category)
+          (ISO-T dates, HTML-stripped description, slug-deep-link URL
+          via planId → slug map, allowlist-validated category)
       → JSON response, Cache-Control: public, s-maxage=300, swr=600
   → calendar.js renders week grid (desktop) or agenda list (mobile)
 ```
 
-### Maintenance — three sources of staleness
+### Maintenance — what to touch when the catalog changes
 
-**1. `CALENDAR_INPUT_EXTRA` in `src/calendar-config.js`** — the `facilityId` + `planId[]` whitelist passed to every storefront query. Mosaic's catalog of public-facing plans can change (a new membership tier, a retired program). When that happens, re-capture:
+**The plan allowlist is now auto-synced.** A scheduled GitHub Action
+(`.github/workflows/calendar-allowlist.yml`) runs daily, replays
+`scripts/capture-calendar-input.mjs` in headless Chromium against the
+portal calendar SPA, and opens a PR updating `src/portal-visible-plan-ids.js`
+whenever the SPA's filter has drifted. Source of truth: the portal SPA
+itself. If a plan isn't in the portal calendar, it doesn't appear in ours.
 
-```bash
-cd scripts && npm install                      # one-time: pull Playwright
-npx playwright install chromium                # one-time: pull the browser
-node capture-calendar-input.mjs
-# Paste the `variables.input` (minus startDate/endDate which the scraper
-# supplies per window) into CALENDAR_INPUT_EXTRA.
-```
+Practical implications:
 
-This script loads `https://portal.mosaicclimbing.com/mos/n/calendar` in headless Chromium, intercepts the storefront's own `StorefrontCalendarQuery` POST, and prints the exact input the SPA sent. No auth needed.
+- **Adding a new public program**: Nicole adds it in the portal so it appears on `https://portal.mosaicclimbing.com/mos/n/calendar`. The next daily workflow run opens a PR with the new planId; merging publishes it on the marketing calendar.
+- **Retiring a program**: Same thing in reverse. PR removes the planId on the next run.
+- **Forcing an immediate sync**: GitHub → Actions → "Calendar allowlist sync" → Run workflow.
+- **Slug map for Register URLs**: not maintained anywhere; fetched fresh per cache miss from `plans(first: 200)`. New programs auto-get correct deep-links.
 
-**2. `TITLE_TO_PROGRAM_SLUG` in `src/calendar-config.js`** — maps each event's `publicTitle` to the portal URL slug so the chip's Register CTA deep-links directly to that program's page (`/mos/programs/<slug>?course=…`). **Vendor-defined slugs, not derivable from titles** ("Top Rope Class" → `top-rope-class-2`, "Yoga Sign Up" → `yoga-2`, etc.). If Mosaic adds a new program, its title won't be in the map and the URL falls back to `/mos/n/calendar` — works but lands one click away from the program. To refresh:
+Knobs that still might need touching:
 
-   - Load `https://portal.mosaicclimbing.com/mos/n/calendar` in a browser
-   - Scroll the sidebar for the new program's link (`/mos/programs/<slug>`)
-   - Add an entry `'New Program Title': 'new-slug'` to the map
+**1. `CALENDAR_INPUT_EXTRA.facilityId`** in `src/calendar-config.js` — Mosaic's Relay-global facility ID. Won't change unless Mosaic re-keys the portal. If it does, run `node scripts/capture-calendar-input.mjs` (verbose mode) and copy the field.
 
-**3. The hardcoded `StorefrontCalendarQuery` body in `src/scrape.js`** — Redpoint could in principle rename a field. The query string in `scrape.js` is verbatim from the SPA bundle; if Redpoint ever changes it, we'll see a GraphQL error in the Worker logs and `/api/events` will return 502 with the upstream error message. Re-capture by reading the new SPA's entry chunk (the query is inlined as a plain string) and updating `scrape.js`.
+**2. The hardcoded `StorefrontCalendarQuery` / `StorefrontPlansQuery` bodies in `src/scrape.js`** — Redpoint could in principle rename a field. The query strings are verbatim from the SPA bundle; if Redpoint ever changes them, the Worker logs will show a GraphQL error and `/api/events` returns 502 with the upstream message. Re-capture from the new SPA bundle.
 
 ### Worker bindings + rate limit
 

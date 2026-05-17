@@ -54,8 +54,8 @@ export async function handleEventsRequest(request, env, ctx) {
   const now = new Date();
   let payload;
   try {
-    const rows = await fetchAllRows(now);
-    payload = buildPayload(rows, { now });
+    const { rows, plansById } = await fetchAllRows(now);
+    payload = buildPayload(rows, plansById, { now });
   } catch (err) {
     return new Response(
       JSON.stringify({
