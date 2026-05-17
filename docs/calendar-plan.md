@@ -741,6 +741,8 @@ Third-party origins allowlisted by purpose:
 | `assets.flodesk.com` | Flodesk universal.js (mailing-list embed in the footer) | `script-src`, `style-src`, `font-src`, `img-src` |
 | `m.flodesk.com`, `api.flodesk.com` | Flodesk form submission + image hosts | `connect-src`, `img-src` |
 | `formsubmit.co` | Static `<form action>` POSTs + chat widget AJAX | `connect-src`, `form-action` |
+| `static.cloudflareinsights.com` | CF Web Analytics beacon (`beacon.min.js`) auto-injected at the edge when CF Web Analytics is enabled for the zone | `script-src` |
+| `cloudflareinsights.com` | CF Web Analytics beacon's report endpoint (`/cdn-cgi/rum`) | `connect-src` |
 
 If a future page adds a new third-party script (analytics, etc.), the embed will silently fail until its origin is added. Check the browser console for `Refused to load …` CSP violations.
 
