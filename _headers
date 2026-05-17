@@ -4,7 +4,7 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.lightwidget.com https://assets.flodesk.com; style-src 'self' 'unsafe-inline' https://assets.flodesk.com; font-src 'self' https://assets.flodesk.com data:; img-src 'self' data: https://assets.flodesk.com https://m.flodesk.com; connect-src 'self' https://formsubmit.co https://m.flodesk.com https://api.flodesk.com; frame-src https://cdn.lightwidget.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.lightwidget.com https://assets.flodesk.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://assets.flodesk.com; font-src 'self' https://assets.flodesk.com data:; img-src 'self' data: https://assets.flodesk.com https://m.flodesk.com; connect-src 'self' https://formsubmit.co https://m.flodesk.com https://api.flodesk.com https://cloudflareinsights.com; frame-src https://cdn.lightwidget.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://formsubmit.co
 
 # Long-cache versioned assets (HTML carries the cache-buster query)
 /styles.css
