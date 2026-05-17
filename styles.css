@@ -476,7 +476,13 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
 
 @media (max-width: 899px) {
   .nav-menu {
-    position: fixed; inset: 60px 0 0;
+    position: fixed;
+    top: 60px; right: 0; left: 0;
+    /* Explicit height — `inset: 60px 0 0` was producing a 72px-tall menu
+       (computed from content) on iOS/Chromium even though top+bottom should
+       have stretched it to viewport height. dvh handles mobile browser
+       chrome (URL bar collapse/expand) better than vh. */
+    height: calc(100dvh - 60px);
     background: var(--bone);
     padding: var(--s-5) var(--gutter) var(--s-7);
     overflow-y: auto;
@@ -485,6 +491,13 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
     transition: transform var(--t-med), visibility var(--t-med);
   }
   .nav-menu[data-open="true"] { transform: translateY(0); visibility: visible; }
+  /* Restore dark text on the mobile drop-down menu. .site-head .nav-list a
+     elsewhere sets color: #fff for the dark sticky desktop header — but
+     the mobile menu drops into a light bone background, so white-on-bone
+     was invisible. Scope this override to the mobile breakpoint only. */
+  .site-head .nav-menu .nav-list a { color: var(--ink); }
+  .site-head .nav-menu .nav-list a.nav-cta,
+  .site-head .nav-menu .nav-list a.btn-primary { color: #fff; }
 }
 @media (min-width: 900px) {
   .nav-toggle { display: none; }
