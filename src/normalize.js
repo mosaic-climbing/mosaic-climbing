@@ -22,21 +22,44 @@ function isAllDay(startIso, endIso) {
   return sm && em && startIso.slice(0, 10) !== endIso.slice(0, 10);
 }
 
-// shortSummary comes back as HTML (e.g. "<p>(Ages 6-10)</p>\n<p>…</p>").
-// Strip tags and collapse whitespace — the marketing UI shows plain text in
-// the modal, and JSON-LD Event.description should be plain too.
+// shortSummary comes back as HTML (e.g. "<p>(Ages 6-10)</p>\n<p>Mosaic&rsquo;s
+// youth …</p>"). Strip tags + decode entities + collapse whitespace; the
+// marketing UI shows plain text in the modal, and JSON-LD Event.description
+// should be plain too.
+
+// Named HTML entities the storefront content uses in practice (curly quotes,
+// dashes, ellipsis, etc.). Plus numeric &#NNN; and &#xNN; are handled below.
+// No DOMParser in the Workers runtime, so this is a hand-rolled table.
+const NAMED_ENTITIES = {
+  nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+  rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“',
+  hellip: '…', mdash: '—', ndash: '–',
+  copy: '©', reg: '®', trade: '™',
+  bull: '•', middot: '·',
+  laquo: '«', raquo: '»',
+  iexcl: '¡', iquest: '¿',
+  frac12: '½', frac14: '¼', frac34: '¾',
+};
+
+function decodeEntity(_, body) {
+  if (body[0] === '#') {
+    const code = body[1] === 'x' || body[1] === 'X'
+      ? parseInt(body.slice(2), 16)
+      : parseInt(body.slice(1), 10);
+    return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+  }
+  return Object.prototype.hasOwnProperty.call(NAMED_ENTITIES, body)
+    ? NAMED_ENTITIES[body]
+    : _;
+}
+
 function stripHtml(s) {
   if (!s) return '';
   return s
     .replace(/<\s*br\s*\/?\s*>/gi, '\n')
     .replace(/<\/p>\s*<p[^>]*>/gi, '\n\n')
     .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/g, decodeEntity)
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
