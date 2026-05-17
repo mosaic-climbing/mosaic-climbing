@@ -141,6 +141,29 @@
     return h + (m || 0) / 60;
   }
 
+  // Client-side title → slug for shareable ?event=<slug> URLs. Kept in the
+  // browser (no server persistence) — same rules every client runs the same
+  // way, so a URL minted on one machine resolves identically on another.
+  // Limitations: doesn't handle two distinct courses with identical titles
+  // (would collide on the slug) and past events that have rolled out of the
+  // active /api/events window simply don't resolve.
+  function slugify(title) {
+    if (!title) return 'event';
+    let s = String(title)
+      .normalize('NFKD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    if (s.length > 60) {
+      s = s.slice(0, 60);
+      const lastDash = s.lastIndexOf('-');
+      if (lastDash >= 30) s = s.slice(0, lastDash);
+      s = s.replace(/-+$/, '');
+    }
+    return s || 'event';
+  }
+
   function indexByDay(events) {
     const map = new Map();
     for (const e of events) {
@@ -560,6 +583,14 @@
     } else if (!modal.hasAttribute('open')) {
       modal.setAttribute('open', '');
     }
+    // Reflect the event in the URL so the user can copy + share the link.
+    // replaceState (not pushState) keeps the back button leaving the page
+    // instead of closing the modal — less surprising on a marketing site.
+    if (ev.title) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('event', slugify(ev.title));
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
   }
 
   function closeModal() {
@@ -567,6 +598,12 @@
     modalListContext = null;
     if (modalBack) modalBack.hidden = true;
     if (typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
+    // Drop the ?event= param so a reload doesn't re-open the modal.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('event')) {
+      url.searchParams.delete('event');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
   }
 
   function backToList() {
@@ -605,6 +642,16 @@
     }
   });
 
+  // If the URL has ?event=<slug>, open the first matching event after the
+  // calendar loads. Match against the live /api/events payload only — past
+  // courses that have rolled out of the window don't resolve.
+  function maybeOpenSlugModal() {
+    const slug = new URLSearchParams(window.location.search).get('event');
+    if (!slug) return;
+    const match = STATE.events.find((e) => slugify(e.title) === slug);
+    if (match) openEventModal(match);
+  }
+
   // Fetch from the same-origin Worker proxy. 5-min edge cache lives there.
   fetch('/api/events', { cache: 'default' })
     .then((r) => {
@@ -617,6 +664,7 @@
       STATE.byDay = indexByDay(STATE.events);
       autoAdvanceIfEmpty();
       render();
+      maybeOpenSlugModal();
     })
     .catch((err) => {
       console.error('calendar: failed to load /api/events', err);
