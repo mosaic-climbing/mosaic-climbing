@@ -207,7 +207,7 @@ The user is also wiring a zone-level Rate Limiting Rule in the CF dashboard for 
 
 Every HTML file references versioned static asset URLs. Current values (always check live HTML before bumping):
 
-- `styles.css?v=46`
+- `styles.css?v=52`
 - `script.js?v=5`
 - `calendar.js?v=5` (only in `calendar.html`)
 - `class-overhang.avif?v=3` / `class-overhang-mobile.avif?v=3` (calendar hero, also referenced in booking.html)
@@ -215,8 +215,8 @@ Every HTML file references versioned static asset URLs. Current values (always c
 Bump the relevant version across every HTML file when the file changes:
 
 ```bash
-# CSS bump (46 → 47)
-for f in *.html; do sed -i '' 's/styles\.css?v=46/styles.css?v=47/g' "$f"; done
+# CSS bump (52 → 53)
+for f in *.html; do sed -i '' 's/styles\.css?v=52/styles.css?v=53/g' "$f"; done
 
 # script.js bump (5 → 6)
 for f in *.html; do sed -i '' 's/script\.js?v=5/script.js?v=6/g' "$f"; done
