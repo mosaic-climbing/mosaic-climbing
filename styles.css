@@ -1336,6 +1336,10 @@ a:hover { color: var(--clay); }
 .site-head .nav-list a:hover { color: var(--clay); }
 .site-head .brand img { filter: invert(1); }
 .site-head a[aria-current="page"]::after { background: var(--clay); }
+/* Hamburger toggle sits on the dark header bar — default ink color matches
+   the bar (#1a1a1a) and goes invisible. Mirror the nav-list convention. */
+.site-head .nav-toggle { color: #fff; }
+.site-head .nav-toggle:hover { background: rgba(255, 255, 255, 0.1); }
 
 /* Section headings now use eyebrow + display pattern */
 .section-head {
