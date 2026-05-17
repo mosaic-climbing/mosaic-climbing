@@ -1,6 +1,6 @@
 import { CATEGORY_RULES } from './calendar-config.js';
 
-function categoryFor(title) {
+export function categoryFor(title) {
   for (const rule of CATEGORY_RULES) {
     if (rule.test.test(title)) return rule.category;
   }
@@ -53,7 +53,7 @@ function decodeEntity(_, body) {
     : _;
 }
 
-function stripHtml(s) {
+export function stripHtml(s) {
   if (!s) return '';
   return s
     .replace(/<\s*br\s*\/?\s*>/gi, '\n')
@@ -82,12 +82,13 @@ function urlFor(row, plansById) {
   return `https://portal.mosaicclimbing.com${path}?${params.toString()}`;
 }
 
-export function normalizeRow(row, plansById) {
+export function normalizeRow(row, plansById, slugByCourseId) {
   const start = toIsoLocal(row.startLocal);
   const end = toIsoLocal(row.endLocal);
   return {
     id: row.courseId,
     sessionId: row.sessionGraphId,
+    slug: slugByCourseId?.get(row.courseId),
     title: row.publicTitle,
     start,
     end,
@@ -101,9 +102,9 @@ export function normalizeRow(row, plansById) {
   };
 }
 
-export function buildPayload(rows, plansById, { now = new Date() } = {}) {
+export function buildPayload(rows, plansById, slugByCourseId, { now = new Date() } = {}) {
   const events = rows
-    .map((r) => normalizeRow(r, plansById))
+    .map((r) => normalizeRow(r, plansById, slugByCourseId))
     .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
   return {
     meta: {

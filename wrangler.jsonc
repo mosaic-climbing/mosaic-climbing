@@ -32,5 +32,22 @@
         }
       }
     ]
-  }
+  },
+  // Per-course slug persistence. Two key shapes:
+  //   course:<courseId> → JSON { slug, title, category, description,
+  //                              capacityText, instructorText,
+  //                              firstSeenAt, lastSeenAt }
+  //   slug:<slug>       → courseId (reverse index for /api/events/<slug>)
+  // Plus meta:seeded gate (PR C) to suppress new-course notifications on
+  // first run. See docs/calendar-plan.md §14c.
+  //
+  // Created 2026-05-17 via `wrangler kv namespace create COURSE_SLUGS`.
+  // Local `wrangler dev --local` ignores the id and creates an in-memory
+  // namespace based on the binding name.
+  "kv_namespaces": [
+    {
+      "binding": "COURSE_SLUGS",
+      "id": "6881eeb378fb40419920d07fbd75386f"
+    }
+  ]
 }

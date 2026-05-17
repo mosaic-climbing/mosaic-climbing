@@ -552,8 +552,19 @@
       }
     }
     if (modalCta) {
-      modalCta.href = ev.url || 'https://portal.mosaicclimbing.com/mos/n/calendar';
-      modalCta.textContent = ev.cta || 'Register';
+      if (ev.archived) {
+        // Past course — no live Register URL. Hide the CTA entirely; the
+        // description in modalDesc already explains the course.
+        modalCta.hidden = true;
+        modalCta.removeAttribute('href');
+      } else {
+        modalCta.hidden = false;
+        modalCta.href = ev.url || 'https://portal.mosaicclimbing.com/mos/n/calendar';
+        modalCta.textContent = ev.cta || 'Register';
+      }
+    }
+    if (modalWhen && ev.archived) {
+      modalWhen.textContent = 'Past event — no longer in the upcoming calendar.';
     }
     if (typeof modal.showModal === 'function' && !modal.open) {
       modal.showModal();
@@ -567,6 +578,14 @@
     modalListContext = null;
     if (modalBack) modalBack.hidden = true;
     if (typeof modal.close === 'function') modal.close(); else modal.removeAttribute('open');
+    // If the modal was opened from a ?event=<slug> deep-link, strip the
+    // param so a reload doesn't re-open it. Use replaceState so the back
+    // button still navigates away normally.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('event')) {
+      url.searchParams.delete('event');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
   }
 
   function backToList() {
@@ -605,6 +624,37 @@
     }
   });
 
+  // If the URL has ?event=<slug>, open that event's modal after the calendar
+  // loads. Try the live payload first; fall back to /api/events/<slug> for
+  // archived courses (the Worker resolves those from KV).
+  function maybeOpenSlugModal() {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('event');
+    if (!slug) return;
+    const live = STATE.events.find((e) => e.slug === slug);
+    if (live) {
+      openEventModal(live);
+      return;
+    }
+    fetch('/api/events/' + encodeURIComponent(slug), { cache: 'default' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data || !data.course) return;
+        openEventModal({
+          id: data.course.courseId,
+          title: data.course.title,
+          category: data.course.category,
+          description: data.course.description,
+          capacityText: data.course.capacityText || '',
+          instructorText: data.course.instructorText || '',
+          archived: data.meta && data.meta.status === 'archived',
+        });
+      })
+      .catch((err) => {
+        console.warn('calendar: /api/events/' + slug + ' lookup failed', err);
+      });
+  }
+
   // Fetch from the same-origin Worker proxy. 5-min edge cache lives there.
   fetch('/api/events', { cache: 'default' })
     .then((r) => {
@@ -617,6 +667,7 @@
       STATE.byDay = indexByDay(STATE.events);
       autoAdvanceIfEmpty();
       render();
+      maybeOpenSlugModal();
     })
     .catch((err) => {
       console.error('calendar: failed to load /api/events', err);
@@ -625,5 +676,8 @@
         statusEl.hidden = false;
       }
       render();
+      // Still try the slug lookup — the per-slug endpoint can resolve from
+      // KV even when /api/events upstream is failing.
+      maybeOpenSlugModal();
     });
 })();
