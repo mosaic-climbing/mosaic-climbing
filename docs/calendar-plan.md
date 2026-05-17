@@ -815,14 +815,30 @@ Bind in `wrangler.jsonc`:
 ]
 ```
 
-Two key shapes (kept separate so we can read either direction in one op):
+**Single index doc** at key `index` holds the entire calendar state:
 
-| Key | Value | Purpose |
-|---|---|---|
-| `course:<courseId>` | `{ slug, title, category, description, capacityText, instructorText, firstSeenAt, lastSeenAt }` | Forward lookup + persistent course identity. Denormalized fields are sufficient to render a meaningful modal/page when the course is no longer in the active `/api/events` window (see §14i). |
-| `slug:<slug>` | `<courseId>` (raw string) | Reverse lookup, used for collision check and for `/api/events/<slug>` → courseId resolution. |
+```jsonc
+{
+  "courses": {
+    "<courseId>": {
+      "slug": "top-rope-class",
+      "title": "Top Rope Class",
+      "category": "workshop",
+      "description": "Want to start learning the ropes?…",
+      "capacityText": "6 spaces",
+      "instructorText": "",
+      "firstSeenAt": "2026-05-17T05:40:51.159Z",
+      "lastSeenAt":  "2026-05-17T05:45:00.000Z"
+    },
+    "<courseId2>": { … }
+  },
+  "slugs": { "top-rope-class": "<courseId>", … }   // reverse index for /api/events/<slug>
+}
+```
 
-Write-once for `slug:*`. For `course:*`: `slug` and `firstSeenAt` are write-once; `title`, `category`, `description`, `capacityText`, `instructorText`, `lastSeenAt` refresh on every scrape that re-sees the course (so the persisted snapshot stays current as long as the course is active).
+Why one doc instead of per-key entries: the Cloudflare Workers per-invocation subrequest cap (50 on Free/Bundled tiers) was crashed by an earlier per-key design after ~10 courses (~48 KV ops + 10 GraphQL = over 50). With the single-doc approach, **one KV.get + one KV.put per cache miss regardless of course count.** Doc grows ~500 B per course; well under KV's 25 MB value limit.
+
+`slug` and `firstSeenAt` on each `courses[courseId]` entry are write-once; `title`, `category`, `description`, `capacityText`, `instructorText`, `lastSeenAt` refresh on every scrape that re-sees the course. The `slugs[slug]` map is strictly append-only.
 
 ### 14d. Discovery / minting flow
 

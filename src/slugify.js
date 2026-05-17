@@ -37,19 +37,19 @@ export function slugify(title) {
 }
 
 // Mint a fresh slug for `title` that doesn't collide with anything already
-// in the reverse index. Probes `slug:<candidate>` with -2, -3, … suffixes.
+// in the reverse-index Map. Pure in-memory; the caller is responsible for
+// passing the live `slugs` map (slug → courseId) read from KV.
 //
 // Concurrency note: two cache-miss requests racing on the same brand-new
-// courseId can both pick the same candidate (both see the slot empty); KV
-// is last-write-wins, so one slug:<candidate> → <courseId> entry survives.
+// courseId can both pick the same candidate (both see an in-memory map
+// without it); KV writes are last-write-wins, so one slug entry survives.
 // The orphan is harmless — only the surviving slug appears in the live
 // payload. See §14d for the full race analysis.
-export async function mintSlug(kv, title) {
+export function mintSlug(slugsMap, title) {
   const base = slugify(title);
   let candidate = base;
   for (let n = 2; n < 100; n++) {
-    const taken = await kv.get('slug:' + candidate);
-    if (!taken) return candidate;
+    if (!slugsMap.has(candidate)) return candidate;
     candidate = `${base}-${n}`;
   }
   throw new Error(`slug collision overflow for "${title}" (base="${base}")`);

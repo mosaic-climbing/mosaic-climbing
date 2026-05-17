@@ -85,14 +85,15 @@ export async function handleEventBySlugRequest(request, env, ctx, slug) {
   const hit = await cache.match(cacheKey);
   if (hit) return withHeaders(hit, { 'X-Cache': 'HIT' });
 
-  const courseId = await env.COURSE_SLUGS.get('slug:' + slug);
+  // One KV read returns both the slug→courseId map and all course snapshots.
+  // See INDEX_KEY comment on the schema for the doc shape.
+  const index = await readIndex(env);
+  const courseId = index.slugs[slug];
   if (!courseId) {
     return jsonResponse({ error: 'not_found', slug }, 404, 'no-store');
   }
-  const snapshot = await env.COURSE_SLUGS.get('course:' + courseId, 'json');
+  const snapshot = index.courses[courseId];
   if (!snapshot) {
-    // Reverse-index pointer exists but the forward record is missing —
-    // shouldn't happen in normal operation. Treat as 404.
     return jsonResponse({ error: 'not_found', slug }, 404, 'no-store');
   }
 
@@ -122,10 +123,33 @@ export async function handleEventBySlugRequest(request, env, ctx, slug) {
 
 // --- KV slug resolution -------------------------------------------------
 
-// For each row's courseId: read the persisted snapshot (if any), mint a fresh
-// slug if the course is new, and refresh the snapshot's mutable fields
-// (title/category/description/capacity/instructor/lastSeenAt) on every scrape.
-// Writes are queued via ctx.waitUntil so they don't add request latency.
+// Single KV doc holds the whole calendar index. Schema:
+//   {
+//     courses: {
+//       [courseId]: { slug, title, category, description, capacityText,
+//                     instructorText, firstSeenAt, lastSeenAt }
+//     },
+//     slugs: { [slug]: courseId }    // reverse map for /api/events/<slug>
+//   }
+// One KV.get per cache miss → no risk of hitting the Workers per-request
+// subrequest cap (which crashed the original per-course-key design after
+// ~10 courses). Doc grows ~500 B per course; well under KV's 25 MB cap.
+const INDEX_KEY = 'index';
+
+async function readIndex(env) {
+  const doc = await env.COURSE_SLUGS.get(INDEX_KEY, 'json');
+  if (!doc) return { courses: {}, slugs: {} };
+  return {
+    courses: doc.courses || {},
+    slugs: doc.slugs || {},
+  };
+}
+
+// For each row's courseId: look up the persisted snapshot (if any), mint a
+// fresh slug if the course is new, refresh mutable snapshot fields
+// (title/category/description/capacity/instructor/lastSeenAt) on every
+// scrape. The whole index doc is written back via ctx.waitUntil — one KV
+// write per cache miss, regardless of course count.
 async function resolveSlugs(env, ctx, rows, now) {
   if (!env.COURSE_SLUGS) {
     // No KV bound — return an empty map. Events get `slug: undefined`,
@@ -134,45 +158,47 @@ async function resolveSlugs(env, ctx, rows, now) {
   }
 
   // Group rows by courseId, picking one representative row per course (we
-  // only need snapshot-shaped fields, which are stable across a course's
-  // sessions).
+  // only need snapshot-shaped fields, which are stable across sessions).
   const repByCourseId = new Map();
   for (const r of rows) {
     if (!repByCourseId.has(r.courseId)) repByCourseId.set(r.courseId, r);
   }
 
+  const index = await readIndex(env);
+  // In-memory Map mirror of index.slugs so mintSlug can probe for
+  // collisions without hitting KV (it's a pure function now).
+  const slugsMap = new Map(Object.entries(index.slugs));
   const slugByCourseId = new Map();
   const nowIso = now.toISOString();
-  const writes = [];
 
   for (const [courseId, row] of repByCourseId) {
-    const existing = await env.COURSE_SLUGS.get('course:' + courseId, 'json');
+    const existing = index.courses[courseId];
     let slug;
-    if (existing?.slug) {
+    if (existing && existing.slug) {
       slug = existing.slug;
     } else {
-      slug = await mintSlug(env.COURSE_SLUGS, row.publicTitle);
-      writes.push(env.COURSE_SLUGS.put('slug:' + slug, courseId));
+      slug = mintSlug(slugsMap, row.publicTitle);
+      slugsMap.set(slug, courseId);
+      index.slugs[slug] = courseId;
     }
     slugByCourseId.set(courseId, slug);
 
     // Refresh snapshot every scrape so an active course's persisted
     // description tracks the upstream. Preserve firstSeenAt; touch lastSeenAt.
-    const snapshot = {
+    index.courses[courseId] = {
       slug,
       title: row.publicTitle,
       category: categoryFor(row.publicTitle),
       description: stripHtml(row.shortSummary),
       capacityText: row.capacityText || '',
       instructorText: row.instructorText || '',
-      firstSeenAt: existing?.firstSeenAt || nowIso,
+      firstSeenAt: (existing && existing.firstSeenAt) || nowIso,
       lastSeenAt: nowIso,
     };
-    writes.push(env.COURSE_SLUGS.put('course:' + courseId, JSON.stringify(snapshot)));
   }
 
-  // Don't await writes — let them happen after the response goes out.
-  ctx.waitUntil(Promise.allSettled(writes));
+  // Single write, fire-and-forget.
+  ctx.waitUntil(env.COURSE_SLUGS.put(INDEX_KEY, JSON.stringify(index)));
   return slugByCourseId;
 }
 
