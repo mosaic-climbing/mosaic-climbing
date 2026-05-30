@@ -26,9 +26,9 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
 
@@ -58,7 +58,12 @@ jobs:
 
       - name: Open PR
         if: steps.drift.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v6
+        # SHA-pinned (not tag-pinned): peter-evans/create-pull-request is a
+        # third-party action. Post the March 2026 tj-actions/Trivy supply-chain
+        # attacks, tags are rewriteable and can be force-pushed to a malicious
+        # commit, so we pin to the immutable commit SHA. Dependabot
+        # (.github/dependabot.yml) bumps this SHA + comment automatically.
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
         with:
           branch: bot/calendar-allowlist
           title: "chore: sync calendar allowlist with portal SPA"
