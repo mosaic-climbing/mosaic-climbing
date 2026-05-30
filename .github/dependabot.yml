@@ -1,0 +1,18 @@
+version: 2
+
+# Keeps GitHub Actions up to date. Critical for the SHA-pinned third-party
+# action in calendar-allowlist.yml (peter-evans/create-pull-request): a pinned
+# commit SHA never drifts on its own, so without Dependabot it silently goes
+# stale. Dependabot opens update PRs with the new SHA + a version comment.
+# First-party actions/* (checkout, setup-node) are tag-pinned and get bumped
+# here too.
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore(actions)"
+    labels:
+      - "dependencies"
+      - "github-actions"
