@@ -124,12 +124,12 @@ favicon.ico, favicon-32.png, favicon-192.png, apple-touch-icon.png
 
 ## Forms
 
-- **All forms POST to FormSubmit.co** with `action="https://formsubmit.co/info@mosaicclimbing.com"`. `info@mosaicclimbing.com` forwards to Nicole anyway, so this is the single inbox.
+- **All forms POST to FormSubmit.co** via the random token endpoint `action="https://formsubmit.co/df1718c9052368b93f7e7c4bb13e3520"` (the token maps to `info@mosaicclimbing.com` — kept out of page source to avoid scraping). The endpoint is activated and live. `info@mosaicclimbing.com` forwards to Nicole anyway, so this is the single inbox.
   - `contact.html` — general inquiries
   - `booking.html` (`#inquire` section) — group event/booking inquiries; every "Inquire" / "Email Nicole to book" CTA across the booking page is an anchor link to this one form
   - `route-setter.html` (`#apply`) — full apply form (name, email, phone, portfolio URL, essay)
   - `youth-coach.html` (`#apply`) — full apply form (name, email, phone, résumé URL, essay)
-  - Chat-bubble widget (injected on every page) — AJAX POST to `formsubmit.co/ajax/info@...`
+  - Chat-bubble widget (injected on every page) — AJAX POST to `formsubmit.co/ajax/df1718c9052368b93f7e7c4bb13e3520`. The handler checks the JSON `success` field (not just HTTP status — FormSubmit returns 200 on failed delivery too).
   - Hidden `_subject` per form distinguishes contact / booking / apply / chat in Nicole's inbox
   - First submission to each `_subject` triggers a one-time FormSubmit activation email — see [MIGRATION.md](MIGRATION.md).
 - The footer mailing-list signup uses **Flodesk** (form ID `6a03e08e8ccae7375c1b4c77`, slim "Inline" form designed for footer embedding). Inline-embedded in the footer of every page via `assets.flodesk.com/universal.js`, lazy-loaded by `script.js` when the footer nears viewport. Subscribers land in Nicole's Flodesk dashboard. Brand styling lives in Flodesk's editor, not in `styles.css`. The older full-page form at `mosaicclimbing.myflodesk.com/mailinglist` still exists as a standalone signup page — referenced by the footer's `<noscript>` fallback link.
@@ -223,7 +223,7 @@ The user is also wiring a zone-level Rate Limiting Rule in the CF dashboard for 
 Every HTML file references versioned static asset URLs. Current values (always check live HTML before bumping):
 
 - `styles.css?v=52`
-- `script.js?v=5`
+- `script.js?v=6`
 - `calendar.js?v=5` (only in `calendar.html`)
 - `class-overhang.avif?v=3` / `class-overhang-mobile.avif?v=3` (calendar hero, also referenced in booking.html)
 
@@ -233,8 +233,8 @@ Bump the relevant version across every HTML file when the file changes:
 # CSS bump (52 → 53)
 for f in *.html; do sed -i '' 's/styles\.css?v=52/styles.css?v=53/g' "$f"; done
 
-# script.js bump (5 → 6)
-for f in *.html; do sed -i '' 's/script\.js?v=5/script.js?v=6/g' "$f"; done
+# script.js bump (6 → 7)
+for f in *.html; do sed -i '' 's/script\.js?v=6/script.js?v=7/g' "$f"; done
 
 # calendar.js bump (5 → 6) — only calendar.html references it
 sed -i '' 's/calendar\.js?v=5/calendar.js?v=6/g' calendar.html
