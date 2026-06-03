@@ -50,7 +50,7 @@
     if (document.querySelector('[data-chat-fab]')) return; // already present
 
     // Submissions land in info@mosaicclimbing.com via FormSubmit's AJAX endpoint
-    const ENDPOINT = 'https://formsubmit.co/ajax/info@mosaicclimbing.com';
+    const ENDPOINT = 'https://formsubmit.co/ajax/df1718c9052368b93f7e7c4bb13e3520';
     const FALLBACK_EMAIL = 'info@mosaicclimbing.com';
 
     const fab = document.createElement('button');
@@ -154,9 +154,18 @@
           }),
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        // FormSubmit returns HTTP 200 even when delivery failed (e.g. needs
+        // activation, disabled, rate-limited) with {"success":"false",...} in
+        // the body. Inspect the payload, not just the status.
+        const result = await response.json().catch(() => ({}));
+        if (String(result.success) !== 'true') {
+          throw new Error(`FormSubmit: ${result.message || 'delivery not confirmed'}`);
+        }
         form.style.display = 'none';
         success.hidden = false;
       } catch (err) {
+        // Log for debugging; the user only sees the generic errorEl message.
+        console.warn('Chat widget submission failed:', err && err.message ? err.message : err);
         submitBtn.textContent = originalLabel;
         submitBtn.disabled = false;
         errorEl.hidden = false;
