@@ -11,21 +11,19 @@
 // drifts from what's committed, the workflow opens a PR with the diff.
 export const PORTAL_VISIBLE_PLAN_IDS = [
   "UGxhbjoxMDQ5OTY1Mg==",
-  "UGxhbjoxMDQ5OTY4MQ==",
   "UGxhbjoxMDc0NDg5OQ==",
   "UGxhbjoxMDc5MDIyNg==",
   "UGxhbjoxMDg4NTY5NA==",
-  "UGxhbjoxMDgxMTY1OA==",
   "UGxhbjoxMTI4NDIwNQ==",
   "UGxhbjoxMTQ2OTc2Mg==",
-  "UGxhbjoxMTY0NjUxNQ==",
   "UGxhbjoxMTg1MjQzNg==",
   "UGxhbjoxMTgzNjYyNw==",
+  "UGxhbjoxMTk4NTM2Nw==",
   "UGxhbjoxMTk5MjA0NA==",
-  "UGxhbjoxMTkzMTM4NA==",
   "UGxhbjoxMjAxMzM5MQ==",
   "UGxhbjoxMjE5MTY0OQ==",
   "UGxhbjoxMjI4Njk5OA==",
+  "UGxhbjoxMjM3MjQ1Mg==",
   "UGxhbjoxMjMyMzIwNA==",
   "UGxhbjoxMjMyNjkyMg==",
   "UGxhbjoxMjMzNTE5NQ=="
