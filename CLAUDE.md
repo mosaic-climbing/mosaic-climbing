@@ -26,6 +26,7 @@ membership.html         adult / youth memberships + benefits
 calendar.html           events page (week view; consumes /api/events at runtime)
 contact.html            address, phone, contact form
 careers.html            open roles list
+general-manager.html    general manager job (with FormSubmit apply form)
 route-setter.html       route setter job (with FormSubmit apply form)
 youth-coach.html        youth coach job (with FormSubmit apply form)
 climb-with-us.html      buy day pass / membership / gift card
@@ -127,6 +128,7 @@ favicon.ico, favicon-32.png, favicon-192.png, apple-touch-icon.png
 - **All forms POST to FormSubmit.co** via the random token endpoint `action="https://formsubmit.co/df1718c9052368b93f7e7c4bb13e3520"` (the token maps to `info@mosaicclimbing.com` — kept out of page source to avoid scraping). The endpoint is activated and live. `info@mosaicclimbing.com` forwards to Nicole anyway, so this is the single inbox.
   - `contact.html` — general inquiries
   - `booking.html` (`#inquire` section) — group event/booking inquiries; every "Inquire" / "Email Nicole to book" CTA across the booking page is an anchor link to this one form
+  - `general-manager.html` (`#apply`) — full apply form (name, email, phone, résumé URL, essay)
   - `route-setter.html` (`#apply`) — full apply form (name, email, phone, portfolio URL, essay)
   - `youth-coach.html` (`#apply`) — full apply form (name, email, phone, résumé URL, essay)
   - Chat-bubble widget (injected on every page) — AJAX POST to `formsubmit.co/ajax/df1718c9052368b93f7e7c4bb13e3520`. The handler checks the JSON `success` field (not just HTTP status — FormSubmit returns 200 on failed delivery too).

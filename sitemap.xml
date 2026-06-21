@@ -49,6 +49,12 @@
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://www.mosaicclimbing.com/general-manager</loc>
+    <lastmod>2026-06-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
     <loc>https://www.mosaicclimbing.com/route-setter</loc>
     <lastmod>2026-05-05</lastmod>
     <changefreq>monthly</changefreq>
