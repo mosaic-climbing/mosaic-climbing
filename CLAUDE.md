@@ -281,7 +281,7 @@ Zone-level Cloudflare settings (SSL/TLS Full Strict, HTTP/3, Auto Minify HTML/CS
 
 - Don't add a frontend framework. The `src/` Worker code IS bundled by CF Workers Builds, but that's the Worker entry only — don't introduce a build step for the static pages.
 - Don't add tracking / analytics scripts without asking.
-- Don't change the navigation order (About / Booking / Membership / Calendar / Contact / Climb With Us).
+- Keep the navigation order: About / Booking / Membership / Calendar / Waiver / Careers / Contact / Climb With Us. (Contact and Climb With Us stay rightmost as the primary CTAs.) Careers was added to the primary nav between Waiver and Contact; the earlier "nav order is locked" rule was lifted by the owner to make this change. Don't reorder without owner sign-off.
 - Don't replace the chat widget injection in `script.js` — Nicole asked for that bottom-right contact bubble.
 - Don't add an email-collection modal — owner doesn't want intrusive popups.
 - Don't delete unreferenced photos in `images/` — owner keeps them as a library for future use.
