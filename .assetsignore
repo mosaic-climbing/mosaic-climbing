@@ -21,9 +21,3 @@ wrangler.jsonc
 CLAUDE.md
 MIGRATION.md
 README.md
-
-# Full-res photo originals kept in the repo as library — processed
-# derivatives (adult-team-hero.*, nicole-coaching.*) are what the site
-# serves; no need to ship 4000x6000 files publicly.
-images/adult-team-hero-original.jpeg
-images/nicole-coaching-original.jpeg
