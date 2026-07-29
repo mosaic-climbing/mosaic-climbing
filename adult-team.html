@@ -52,7 +52,7 @@
   <aside style="background: #2b2b2b; color: #fafafa; padding: 1.25rem 0; border-bottom: 3px solid #ffc93c;">
     <div class="wrap">
       <p style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #ffc93c;">Internal draft — not published</p>
-      <p style="margin-top: 0.5rem; max-width: 68ch; color: rgba(255,255,255,0.82); font-size: 0.95rem;">Preview branch only — not in the site navigation, not in the sitemap, marked <code>noindex</code>. Still incoming: Nicole's bio and the banner photo (yellow chips mark both). Program copy below is Nicole's.</p>
+      <p style="margin-top: 0.5rem; max-width: 68ch; color: rgba(255,255,255,0.82); font-size: 0.95rem;">Preview branch only — not in the site navigation, not in the sitemap, marked <code>noindex</code>. Bio is in. Still incoming: the two photo files (banner + Nicole spotting) — drop the originals in <code>images/</code>. Program copy and bio are Nicole's.</p>
     </div>
   </aside>
 
@@ -169,10 +169,21 @@
     <div class="wrap cols cols-narrow-wide">
       <div>
         <h2>Your coach.</h2>
-        <p class="mt-5"><span style="background:#ffe9a8; color:#5a4600; padding:0.1em 0.45em; border-radius:2px; font-weight:700; font-size:0.85em; letter-spacing:0.04em;">INCOMING</span> &nbsp;Nicole's bio and photo go here.</p>
+        <!-- PHOTO SLOT: nicole-coaching (Nicole spotting a climber). Uncomment once
+             images/nicole-coaching.{avif,webp,jpg} exist, and delete the chip <p>. -->
+        <!--
+        <div class="img img-portrait mt-6">
+          <picture><source srcset="images/nicole-coaching.avif" type="image/avif" /><source srcset="images/nicole-coaching.webp" type="image/webp" /><img src="images/nicole-coaching.jpg" alt="Nicole spotting a climber on the bouldering wall at Mosaic" width="1334" height="2000" loading="lazy" decoding="async" /></picture>
+        </div>
+        -->
+        <p class="mt-5"><span style="background:#ffe9a8; color:#5a4600; padding:0.1em 0.45em; border-radius:2px; font-weight:700; font-size:0.85em; letter-spacing:0.04em;">INCOMING</span> &nbsp;Photo: Nicole spotting a climber — drop the original in <code>images/</code> and the markup above activates.</p>
       </div>
-      <div>
-        <blockquote style="border-left: 3px solid var(--clay); padding-left: 1.25rem; max-width: 60ch;">
+      <div class="flow-loose">
+        <p class="lede">Nicole is the co-founder of Mosaic Climbing and a recreational climber of 15 years. A non-athlete throughout youth, she was first introduced to the sport during graduate school. The gym didn't intrigue her much initially, but her first trip to the Red River Gorge converted her entirely. The rest is history.</p>
+        <p>Nicole has since worked with countless athletes, from absolute beginner to elite. She is most passionate about teaching movement and loves nothing more than diving into the nuances that make sequences 'click'. Nicole has a background in biomechanical engineering, exercise science, and nutrition, and relishes combining those interests with the sport she loves.</p>
+        <p>Nicole's coaching philosophy is rooted in honoring each climber's individual experience. Every climber will encounter their own challenges, making each climbing journey special and unique. Nicole has witnessed it all first hand in her extended relationship with climbing, from grade chasing to quitting entirely, and falling in love with it all over again.</p>
+        <p>Nicole loves sharing climbing with others and can't wait to collaborate on this new endeavor with a group of stoked training partners!</p>
+        <blockquote class="mt-6" style="border-left: 3px solid var(--clay); padding-left: 1.25rem; max-width: 60ch;">
           <p class="lede">"My goal is for you to derive joy and delight from each and every opportunity you have to experience the sport of climbing."</p>
           <p class="mt-3" style="font-size: var(--t-sm); color: var(--ink-mute);">— Nicole, Head Coach</p>
         </blockquote>
@@ -208,8 +219,8 @@
     <div class="wrap">
       <p style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #ffc93c;">Before this goes live — delete this section too</p>
       <ul class="mt-5" style="list-style: disc; padding-left: 1.25em; max-width: 76ch; color: rgba(255,255,255,0.82); font-size: 0.95rem; display: grid; gap: 0.4rem;">
-        <li>Add Nicole's bio + photo to the "Your coach" section and remove the yellow chip</li>
-        <li>Swap the hero — currently reusing <code>community-watching.jpg</code> from booking; needs the real banner photo (plus AVIF/WebP + mobile crop, and update the two <code>&lt;link rel="preload"&gt;</code> image tags in the head)</li>
+        <li>Bio is in — add the Nicole-spotting photo (<code>images/nicole-coaching.*</code>), activate the commented markup, remove the yellow chip</li>
+        <li>Swap the hero — currently reusing <code>community-watching.jpg</code> from booking; the real banner is the group photo (needs AVIF/WebP + mobile crop, and update the two <code>&lt;link rel="preload"&gt;</code> image tags in the head). Note: it's portrait orientation, so check how the full-bleed crop lands on wide screens.</li>
         <li>Delete the draft banner at the top and this checklist section</li>
         <li>Remove the <code>noindex, nofollow</code> meta tag</li>
         <li>Write the real <code>&lt;title&gt;</code>, meta description, canonical, OG and Twitter tags (copy the pattern from <code>membership.html</code>)</li>
