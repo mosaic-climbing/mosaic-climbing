@@ -19,12 +19,12 @@ export const PORTAL_VISIBLE_PLAN_IDS = [
   "UGxhbjoxMTg1MjQzNg==",
   "UGxhbjoxMTgzNjYyNw==",
   "UGxhbjoxMTk4NTM2Nw==",
-  "UGxhbjoxMTk5MjA0NA==",
   "UGxhbjoxMjAxMzM5MQ==",
-  "UGxhbjoxMjE5MTY0OQ==",
   "UGxhbjoxMjI4Njk5OA==",
   "UGxhbjoxMjM3MjQ1Mg==",
   "UGxhbjoxMjMyMzIwNA==",
   "UGxhbjoxMjMyNjkyMg==",
-  "UGxhbjoxMjMzNTE5NQ=="
+  "UGxhbjoxMjMzNTE5NQ==",
+  "UGxhbjoxMjUwODQ1MQ==",
+  "UGxhbjoxMjUyNTM5OQ=="
 ];
