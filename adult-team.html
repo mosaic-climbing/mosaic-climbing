@@ -58,7 +58,11 @@
 
   <section class="photo-hero photo-hero--page">
     <picture><source media="(max-width: 800px)" srcset="images/adult-team-hero-mobile.avif" type="image/avif" /><source srcset="images/adult-team-hero.avif" type="image/avif" /><source srcset="images/adult-team-hero.webp" type="image/webp" /><img src="images/adult-team-hero.jpg" alt="A group of adult climbers posing together in front of the bouldering wall at Mosaic, one hanging upside down from the holds" width="1800" height="1200" fetchpriority="high" decoding="async" /></picture>
-    <div class="wrap photo-hero__wrap">
+    <!-- Title pinned to the top of the hero: the top band of the photo is empty
+         wall, while the default bottom placement covered the left group's faces.
+         Inline align-self wins over the mobile media query too, which is what we
+         want — the mobile crop is also empty at the top. -->
+    <div class="wrap photo-hero__wrap" style="align-self: start; padding-block: var(--s-9) 0;">
       <h1>Adult<br/>Climbing<br/>Team.</h1>
     </div>
   </section>
@@ -196,7 +200,9 @@
       <div class="flow-loose">
         <p class="lede" style="color: rgba(255,255,255,0.85);">Fall semester runs Sept 3 — Nov 19. Thursdays, 6 — 7:30pm. $289, members only.</p>
         <div class="actions mt-6">
-          <a href="https://portal.mosaicclimbing.com/mos/programs/adult-climbing-team" target="_blank" rel="noopener" class="btn btn-on-dark btn-lg btn-arrow">Sign up on the portal</a>
+          <!-- Inline color: .section-ink a (bone) out-specifies .btn-on-dark (ink)
+               on anchors — bone-on-bone without this. -->
+          <a href="https://portal.mosaicclimbing.com/mos/programs/adult-climbing-team" target="_blank" rel="noopener" class="btn btn-on-dark btn-lg btn-arrow" style="color: var(--ink);">Sign up on the portal</a>
           <a href="membership" class="btn btn-on-dark-ghost">Not a member yet?</a>
         </div>
       </div>
