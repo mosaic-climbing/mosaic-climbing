@@ -15,8 +15,8 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=2" />
 <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png?v=2" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
-<link rel="preload" as="image" href="/images/community-watching-mobile.avif?v=2" media="(max-width: 800px)" type="image/avif" fetchpriority="high" />
-<link rel="preload" as="image" href="/images/community-watching.avif?v=2" media="(min-width: 801px)" type="image/avif" fetchpriority="high" />
+<link rel="preload" as="image" href="/images/adult-team-hero-mobile.avif" media="(max-width: 800px)" type="image/avif" fetchpriority="high" />
+<link rel="preload" as="image" href="/images/adult-team-hero.avif" media="(min-width: 801px)" type="image/avif" fetchpriority="high" />
 <link rel="stylesheet" href="styles.css?v=52" />
 </head>
 <body>
@@ -52,12 +52,12 @@
   <aside style="background: #2b2b2b; color: #fafafa; padding: 1.25rem 0; border-bottom: 3px solid #ffc93c;">
     <div class="wrap">
       <p style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #ffc93c;">Internal draft — not published</p>
-      <p style="margin-top: 0.5rem; max-width: 68ch; color: rgba(255,255,255,0.82); font-size: 0.95rem;">Preview branch only — not in the site navigation, not in the sitemap, marked <code>noindex</code>. Bio is in. Still incoming: the two photo files (banner + Nicole spotting) — drop the originals in <code>images/</code>. Program copy and bio are Nicole's.</p>
+      <p style="margin-top: 0.5rem; max-width: 68ch; color: rgba(255,255,255,0.82); font-size: 0.95rem;">Preview branch only — not in the site navigation, not in the sitemap, marked <code>noindex</code>. Copy, bio, photos, and portal signup link are all in — remaining work is the launch checklist at the bottom of the page.</p>
     </div>
   </aside>
 
   <section class="photo-hero photo-hero--page">
-    <picture><source media="(max-width: 800px)" srcset="images/community-watching-mobile.avif?v=2" type="image/avif" /><source srcset="images/community-watching.avif?v=2" type="image/avif" /><source srcset="images/community-watching.webp" type="image/webp" /><img src="images/community-watching.jpg" alt="Adult climbers gathered together watching a climber at Mosaic" width="1800" height="1200" fetchpriority="high" decoding="async" /></picture>
+    <picture><source media="(max-width: 800px)" srcset="images/adult-team-hero-mobile.avif" type="image/avif" /><source srcset="images/adult-team-hero.avif" type="image/avif" /><source srcset="images/adult-team-hero.webp" type="image/webp" /><img src="images/adult-team-hero.jpg" alt="A group of adult climbers posing together in front of the bouldering wall at Mosaic, one hanging upside down from the holds" width="1800" height="1200" fetchpriority="high" decoding="async" /></picture>
     <div class="wrap photo-hero__wrap">
       <h1>Adult<br/>Climbing<br/>Team.</h1>
     </div>
@@ -86,7 +86,7 @@
         <p>This inaugural season is limited to 8 members. Founding members will have real input in shaping how the program evolves in future seasons.</p>
 
         <div class="actions mt-6">
-          <a href="#interest" class="btn btn-primary btn-arrow">Claim a spot</a>
+          <a href="https://portal.mosaicclimbing.com/mos/programs/adult-climbing-team" target="_blank" rel="noopener" class="btn btn-primary btn-arrow">Claim a spot</a>
           <a href="#details" class="btn btn-ghost">Season details</a>
         </div>
       </div>
@@ -169,14 +169,9 @@
     <div class="wrap cols cols-narrow-wide">
       <div>
         <h2>Your coach.</h2>
-        <!-- PHOTO SLOT: nicole-coaching (Nicole spotting a climber). Uncomment once
-             images/nicole-coaching.{avif,webp,jpg} exist, and delete the chip <p>. -->
-        <!--
         <div class="img img-portrait mt-6">
-          <picture><source srcset="images/nicole-coaching.avif" type="image/avif" /><source srcset="images/nicole-coaching.webp" type="image/webp" /><img src="images/nicole-coaching.jpg" alt="Nicole spotting a climber on the bouldering wall at Mosaic" width="1334" height="2000" loading="lazy" decoding="async" /></picture>
+          <picture><source srcset="images/nicole-coaching.avif" type="image/avif" /><source srcset="images/nicole-coaching.webp" type="image/webp" /><img src="images/nicole-coaching.jpg" alt="Nicole spotting a climber on the bouldering wall at Mosaic" width="1200" height="1800" loading="lazy" decoding="async" /></picture>
         </div>
-        -->
-        <p class="mt-5"><span style="background:#ffe9a8; color:#5a4600; padding:0.1em 0.45em; border-radius:2px; font-weight:700; font-size:0.85em; letter-spacing:0.04em;">INCOMING</span> &nbsp;Photo: Nicole spotting a climber — drop the original in <code>images/</code> and the markup above activates.</p>
       </div>
       <div class="flow-loose">
         <p class="lede">Nicole is the co-founder of Mosaic Climbing and a recreational climber of 15 years. A non-athlete throughout youth, she was first introduced to the sport during graduate school. The gym didn't intrigue her much initially, but her first trip to the Red River Gorge converted her entirely. The rest is history.</p>
@@ -191,26 +186,20 @@
     </div>
   </section>
 
-  <!-- INTEREST FORM -->
+  <!-- SIGN UP -->
   <section class="section section-ink" id="interest">
     <div class="wrap cols cols-5-7">
       <div>
         <h2>Claim a spot.</h2>
-        <p class="mt-5">The inaugural season is capped at 8 members. Tell us about your climbing and Nicole will follow up with the intake assessment.</p>
-        <p class="mt-3" style="font-size: 0.85rem; color: rgba(255,255,255,0.55);">Draft note: swap this form for a portal "Sign up" link if the semester gets a plan in Redpoint. Until then, submissions land in the info@ inbox like booking inquiries.</p>
+        <p class="mt-5">The inaugural season is capped at 8 members. Sign up through the member portal, and Nicole will follow up with your intake assessment before the first session.</p>
       </div>
-      <form method="POST" action="https://formsubmit.co/df1718c9052368b93f7e7c4bb13e3520" style="background: var(--bone); color: var(--ink); padding: var(--s-6); border-radius: 4px; display: flex; flex-direction: column; gap: var(--s-4);">
-        <input type="hidden" name="_subject" value="Adult team interest — mosaicclimbing.com" />
-        <input type="hidden" name="_captcha" value="true" />
-        <input type="hidden" name="_next" value="https://www.mosaicclimbing.com/adult-team?sent=1#interest" />
-        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" />
-        <div class="field"><label for="name">Name</label><input class="input" id="name" name="name" type="text" autocomplete="name" required /></div>
-        <div class="field"><label for="email">Email</label><input class="input" id="email" name="email" type="email" autocomplete="email" required /></div>
-        <div class="field"><label for="phone">Phone</label><input class="input" id="phone" name="phone" type="tel" autocomplete="tel" /></div>
-        <div class="field"><label for="grades">Where's your climbing right now?</label><input class="input" id="grades" name="grades" type="text" placeholder="Boulder and rope grades you're comfortable at." /></div>
-        <div class="field"><label for="goals">What do you want out of the semester?</label><textarea class="textarea" id="goals" name="message" placeholder="Goals, projects, plateaus, anything Nicole should know before the intake assessment."></textarea></div>
-        <button type="submit" class="btn btn-on-dark btn-lg btn-arrow">Send to Nicole</button>
-      </form>
+      <div class="flow-loose">
+        <p class="lede" style="color: rgba(255,255,255,0.85);">Fall semester runs Sept 3 — Nov 19. Thursdays, 6 — 7:30pm. $289, members only.</p>
+        <div class="actions mt-6">
+          <a href="https://portal.mosaicclimbing.com/mos/programs/adult-climbing-team" target="_blank" rel="noopener" class="btn btn-on-dark btn-lg btn-arrow">Sign up on the portal</a>
+          <a href="membership" class="btn btn-on-dark-ghost">Not a member yet?</a>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -219,16 +208,12 @@
     <div class="wrap">
       <p style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #ffc93c;">Before this goes live — delete this section too</p>
       <ul class="mt-5" style="list-style: disc; padding-left: 1.25em; max-width: 76ch; color: rgba(255,255,255,0.82); font-size: 0.95rem; display: grid; gap: 0.4rem;">
-        <li>Bio is in — add the Nicole-spotting photo (<code>images/nicole-coaching.*</code>), activate the commented markup, remove the yellow chip</li>
-        <li>Swap the hero — currently reusing <code>community-watching.jpg</code> from booking; the real banner is the group photo (needs AVIF/WebP + mobile crop, and update the two <code>&lt;link rel="preload"&gt;</code> image tags in the head). Note: it's portrait orientation, so check how the full-bleed crop lands on wide screens.</li>
         <li>Delete the draft banner at the top and this checklist section</li>
         <li>Remove the <code>noindex, nofollow</code> meta tag</li>
-        <li>Write the real <code>&lt;title&gt;</code>, meta description, canonical, OG and Twitter tags (copy the pattern from <code>membership.html</code>)</li>
+        <li>Write the real <code>&lt;title&gt;</code>, meta description, canonical, OG and Twitter tags (copy the pattern from <code>membership.html</code>; OG image = <code>adult-team-hero.jpg</code>)</li>
         <li>Add the <code>SportsActivityLocation</code> JSON-LD block every other page carries, plus an <code>Offer</code> for the $289 semester</li>
         <li>Decide where it links from (nav / membership / booking) — nav order changes need owner sign-off</li>
         <li>Add the page to <code>sitemap.xml</code> and a footer Site-column link on every page</li>
-        <li>Decide the signup path: keep the interest form, or a Redpoint portal plan link</li>
-        <li>First submission of the <code>Adult team interest</code> subject triggers a one-time FormSubmit activation email to <code>info@mosaicclimbing.com</code> — Nicole must click it before submissions deliver</li>
         <li>Confirm the private-coaching rate: this page says "regularly $80/hr"; <code>booking.html</code> lists adult private instruction at $60/hr — either they're different products (worth naming clearly) or one number needs updating</li>
       </ul>
     </div>
