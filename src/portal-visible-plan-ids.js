@@ -25,6 +25,7 @@ export const PORTAL_VISIBLE_PLAN_IDS = [
   "UGxhbjoxMjMyMzIwNA==",
   "UGxhbjoxMjMyNjkyMg==",
   "UGxhbjoxMjMzNTE5NQ==",
+  "UGxhbjoxMjU5NTMxMQ==",
   "UGxhbjoxMjUwODQ1MQ==",
   "UGxhbjoxMjUyNTM5OQ=="
 ];
