@@ -870,6 +870,8 @@ hr.rule-strong { border: 0; border-top: 1.5px solid var(--ink); margin-block: va
 .hours dt, .hours dd { font-size: var(--t-sm); color: rgba(255, 255, 255, 0.85); }
 .hours dt { color: rgba(255, 255, 255, 0.6); }
 .hours dd { font-feature-settings: var(--tnum); color: var(--bone); font-weight: 600; }
+.foot-hours-note { margin-top: var(--s-3); font-size: var(--t-xs); color: rgba(255, 255, 255, 0.85); }
+.foot-hours-note strong { color: var(--bone); font-weight: 700; }
 .foot-rule {
   margin-top: var(--s-7); padding-top: var(--s-5);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
