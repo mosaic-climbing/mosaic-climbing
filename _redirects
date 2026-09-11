@@ -12,6 +12,9 @@
 /events            /calendar     301
 /youth-classes     /booking      301
 
+# Retired pages (2026-09-11): the adult team page moved to the portal programs listing
+/adult-team        https://portal.mosaicclimbing.com/mos/n/programs   301
+
 # Note: www → apex canonicalization is handled at the Cloudflare domain
 # level (Rules → Redirect Rules) once the custom domain is wired up
 # post-cutover. _redirects only accepts relative paths, not cross-host.
