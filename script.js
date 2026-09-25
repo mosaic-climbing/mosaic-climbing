@@ -45,6 +45,54 @@
   // Year auto-fill
   document.querySelectorAll('[data-year]').forEach((el) => { el.textContent = String(new Date().getFullYear()); });
 
+  // ---------- Holiday hours ----------
+  // The one list of upcoming holiday hours. Each entry shows in the footer
+  // (every [data-holiday-hours] slot) from HOLIDAY_LEAD_DAYS before its date
+  // through the end of the day (gym-local time), then drops off by itself.
+  // Add new dates here; prune past ones whenever convenient. Keep the
+  // JSON-LD specialOpeningHoursSpecification + llms.txt in sync.
+  const HOLIDAY_HOURS = [
+    { date: '2026-10-12', name: '',                 hours: 'Regular hours' },
+    { date: '2026-11-26', name: 'Thanksgiving',     hours: 'Closed' },
+    { date: '2026-11-27', name: '',                 hours: '10am — 9pm' },
+    { date: '2026-12-24', name: 'Christmas Eve',    hours: 'Closed' },
+    { date: '2026-12-25', name: 'Christmas Day',    hours: 'Closed' },
+    { date: '2026-12-31', name: "New Year's Eve",   hours: '10am — 4pm' },
+    { date: '2027-01-01', name: "New Year's Day",   hours: 'Closed' },
+  ];
+  const HOLIDAY_LEAD_DAYS = 14;
+
+  function renderHolidayHours() {
+    const slots = document.querySelectorAll('[data-holiday-hours]');
+    if (!slots.length) return;
+    // Today's date in the gym's time zone, as YYYY-MM-DD (en-CA formats that way).
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+    const dayMs = 86400000;
+    const toUtc = (iso) => Date.parse(iso + 'T00:00:00Z');
+    const t = toUtc(today);
+    const live = HOLIDAY_HOURS.filter((h) => {
+      const d = toUtc(h.date);
+      return d >= t && d - t <= HOLIDAY_LEAD_DAYS * dayMs;
+    });
+    if (!live.length) return;
+    const fmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    slots.forEach((slot) => {
+      slot.textContent = '';
+      const label = document.createElement('strong');
+      label.textContent = 'Holiday hours';
+      slot.appendChild(label);
+      live.forEach((h) => {
+        const when = fmt.format(new Date(toUtc(h.date))).replace(' ', ' ');
+        slot.appendChild(document.createElement('br'));
+        slot.appendChild(document.createTextNode(
+          (h.name ? h.name + ', ' : '') + when + ' · ' + h.hours
+        ));
+      });
+      slot.hidden = false;
+    });
+  }
+  renderHolidayHours();
+
   // ---------- Chat / contact widget (auto-injected on every page) ----------
   function buildChatWidget() {
     if (document.querySelector('[data-chat-fab]')) return; // already present

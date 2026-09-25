@@ -204,6 +204,12 @@ The user is also wiring a zone-level Rate Limiting Rule in the CF dashboard for 
 - **Click flow**: event chip → event-detail modal; "+N more" chip → list-mode modal → click a row → drills into event-detail with a "← Back to list" breadcrumb.
 - **Don't reintroduce "+N more" semantics that hide events from the grid itself** — the brief was "show every event inline"; the overflow chip is the explicit exception only when lane-pack would make chips unreadable.
 
+## Holiday hours
+
+One dated list, `HOLIDAY_HOURS` near the top of `script.js`. Each entry auto-promotes into the footer slot (`<p class="foot-hours-note" data-holiday-hours hidden>` on every page) starting 14 days before its date (`HOLIDAY_LEAD_DAYS`) and drops off after the day ends (America/New_York). No per-holiday HTML edits — don't go back to hand-adding/removing footer rows.
+
+When adding dates: edit `HOLIDAY_HOURS`, bump `script.js?v=N`, add matching `specialOpeningHoursSpecification` entries to the JSON-LD on each page (closed = `00:00`/`00:00`; "regular hours" days need none), and update the Holiday line in `llms.txt`. Prune past entries whenever convenient.
+
 ## SEO + AI discoverability
 
 - Per-page unique `<title>` (≤60 chars), `<meta description>` (140–160 chars), canonical, OG + Twitter.
@@ -225,7 +231,7 @@ The user is also wiring a zone-level Rate Limiting Rule in the CF dashboard for 
 Every HTML file references versioned static asset URLs. Current values (always check live HTML before bumping):
 
 - `styles.css?v=52`
-- `script.js?v=6`
+- `script.js?v=7`
 - `calendar.js?v=5` (only in `calendar.html`)
 - `class-overhang.avif?v=3` / `class-overhang-mobile.avif?v=3` (calendar hero, also referenced in booking.html)
 
@@ -235,8 +241,8 @@ Bump the relevant version across every HTML file when the file changes:
 # CSS bump (52 → 53)
 for f in *.html; do sed -i '' 's/styles\.css?v=52/styles.css?v=53/g' "$f"; done
 
-# script.js bump (6 → 7)
-for f in *.html; do sed -i '' 's/script\.js?v=6/script.js?v=7/g' "$f"; done
+# script.js bump (7 → 8)
+for f in *.html; do sed -i '' 's/script\.js?v=7/script.js?v=8/g' "$f"; done
 
 # calendar.js bump (5 → 6) — only calendar.html references it
 sed -i '' 's/calendar\.js?v=5/calendar.js?v=6/g' calendar.html
