@@ -226,6 +226,60 @@
     buildChatWidget();
   }
 
+  // ---------- Gift card popup ----------
+  // Small corner card (bottom-left, opposite the chat bubble) linking to the
+  // portal's gift card page. Not a modal: no backdrop, no focus steal, page
+  // stays usable. Closing it (or clicking through) hides it on this device
+  // for GIFT_SNOOZE_DAYS. Set GIFT_POPUP_ON to false to turn it off sitewide.
+  const GIFT_POPUP_ON = true;
+  const GIFT_URL = 'https://portal.mosaicclimbing.com/mos/gift-cards/gift-card';
+  const GIFT_SNOOZE_DAYS = 30;
+  const GIFT_DELAY_MS = 2500;
+  const GIFT_KEY = 'mosaic-gift-popup-closed';
+  const GIFT_SKIP_PAGES = ['climb-with-us', 'waiver']; // already sells gift cards / redirect page
+
+  function buildGiftPopup() {
+    if (!GIFT_POPUP_ON || document.querySelector('[data-gift-pop]')) return;
+    const page = (location.pathname.split('/').pop() || '').toLowerCase().replace(/\.html$/, '');
+    if (GIFT_SKIP_PAGES.includes(page)) return;
+    try {
+      const closedAt = Number(localStorage.getItem(GIFT_KEY) || 0);
+      if (closedAt && Date.now() - closedAt < GIFT_SNOOZE_DAYS * 86400000) return;
+    } catch (err) { /* storage blocked: show it, it just won't be remembered */ }
+
+    const pop = document.createElement('aside');
+    pop.className = 'gift-pop';
+    pop.setAttribute('aria-label', 'Gift cards');
+    pop.dataset.giftPop = '';
+    pop.dataset.open = 'false';
+    pop.innerHTML = `
+      <button type="button" class="gift-pop__close" data-gift-close aria-label="Close gift card message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+      <p class="gift-pop__title">Gift Cards</p>
+      <p class="gift-pop__text">You can buy gift cards in fixed or custom amounts!</p>
+      <a class="btn btn-primary btn-sm" data-gift-cta href="${GIFT_URL}" target="_blank" rel="noopener">Buy Now</a>
+    `;
+    document.body.appendChild(pop);
+
+    const remember = () => {
+      try { localStorage.setItem(GIFT_KEY, String(Date.now())); } catch (err) { /* ignore */ }
+    };
+    const close = () => {
+      remember();
+      pop.dataset.open = 'false';
+      setTimeout(() => pop.remove(), 300);
+    };
+    pop.querySelector('[data-gift-close]').addEventListener('click', close);
+    pop.querySelector('[data-gift-cta]').addEventListener('click', close);
+    setTimeout(() => { pop.dataset.open = 'true'; }, GIFT_DELAY_MS);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildGiftPopup);
+  } else {
+    buildGiftPopup();
+  }
+
   // Lazy-load the LightWidget resizer script when the IG iframe nears viewport
   const igFrame = document.querySelector('iframe.lightwidget-widget');
   if (igFrame && 'IntersectionObserver' in window) {

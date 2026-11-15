@@ -230,8 +230,8 @@ When adding dates: edit `HOLIDAY_HOURS`, bump `script.js?v=N`, add matching `spe
 
 Every HTML file references versioned static asset URLs. Current values (always check live HTML before bumping):
 
-- `styles.css?v=52`
-- `script.js?v=7`
+- `styles.css?v=53`
+- `script.js?v=8`
 - `calendar.js?v=5` (only in `calendar.html`)
 - `class-overhang.avif?v=3` / `class-overhang-mobile.avif?v=3` (calendar hero, also referenced in booking.html)
 
@@ -290,6 +290,7 @@ Zone-level Cloudflare settings (SSL/TLS Full Strict, HTTP/3, Auto Minify HTML/CS
 - Keep the navigation order: About / Booking / Membership / Calendar / Waiver / Careers / Contact / Climb With Us. (Contact and Climb With Us stay rightmost as the primary CTAs.) Careers was added to the primary nav between Waiver and Contact; the earlier "nav order is locked" rule was lifted by the owner to make this change. Don't reorder without owner sign-off.
 - Don't replace the chat widget injection in `script.js` — Nicole asked for that bottom-right contact bubble.
 - Don't add an email-collection modal — owner doesn't want intrusive popups.
+  - The gift card corner card (`buildGiftPopup` in `script.js`, `.gift-pop` in `styles.css`) is the one sanctioned exception, added at Chris's request: bottom-left, no backdrop, no focus steal, closes for 30 days per device, skipped on `/climb-with-us` and `/waiver`. Copy is the portal's own gift card blurb. Turn it off with `GIFT_POPUP_ON = false`. Keep it non-blocking; don't grow it into a modal.
 - Don't delete unreferenced photos in `images/` — owner keeps them as a library for future use.
 - **Don't add `.html` to internal `href`s.** Cloudflare Workers Assets 307s `/foo.html` to `/foo` — Lighthouse caught this as a 620 ms penalty per nav. Use `href="about"`, `href="booking"`, …; the home link is `href="/"`. The brand logo is `href="/"`, not `href="index.html"`.
 - **Don't add inline `<script>` blocks that execute.** The sitewide CSP in `_headers` allows `script-src 'self' https://cdn.lightwidget.com https://assets.flodesk.com https://static.cloudflareinsights.com` only — no `'unsafe-inline'`. Executable inline scripts will be blocked. JSON-LD blocks (`type="application/ld+json"`) are exempt per the spec and fine. If you need to add a new third-party script, allowlist its origin in the CSP first. (`static.cloudflareinsights.com` is there because CF Web Analytics auto-injects its beacon at the edge — see docs/calendar-plan.md §13b.)

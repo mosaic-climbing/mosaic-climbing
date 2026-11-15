@@ -1005,6 +1005,60 @@ details.faq .answer { margin-top: var(--s-3); max-width: 60ch; color: var(--ink-
 }
 .chip-clay { background: var(--clay); color: var(--bone); border-color: var(--clay); }
 
+/* ---------- Gift card popup (corner card, bottom-left) ---------- */
+.gift-pop {
+  position: fixed;
+  left: clamp(1rem, 2vw, 1.5rem);
+  bottom: clamp(1rem, 2vw, 1.5rem);
+  z-index: 40; /* under the sticky header / mobile nav (50) and chat (60) */
+  /* leave room for the 52px chat bubble on narrow screens */
+  width: min(300px, calc(100vw - 2 * clamp(1rem, 2vw, 1.5rem) - 52px - 0.75rem));
+  background: var(--bone);
+  border: 1px solid var(--line-strong);
+  border-top: 3px solid var(--clay);
+  border-radius: 2px;
+  box-shadow: 0 18px 40px rgba(10,10,10,0.18), 0 6px 14px rgba(10,10,10,0.12);
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px);
+  transition: opacity var(--t-med), transform var(--t-med), visibility 0s linear 0.3s;
+}
+.gift-pop[data-open="true"] {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity var(--t-med), transform var(--t-med);
+}
+.gift-pop__title {
+  font-family: var(--display);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-size: var(--t-lg);
+  line-height: 1;
+  padding-right: var(--s-6);
+}
+.gift-pop__text {
+  margin-top: var(--s-2);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.gift-pop .btn { margin-top: var(--s-4); }
+.gift-pop__close {
+  position: absolute; top: var(--s-2); right: var(--s-2);
+  width: 32px; height: 32px;
+  display: inline-grid; place-items: center;
+  background: transparent; border: 0; border-radius: 2px;
+  color: var(--ink-mute);
+  cursor: pointer;
+}
+.gift-pop__close svg { width: 16px; height: 16px; }
+.gift-pop__close:hover { color: var(--ink); background: var(--bone-deep); }
+.gift-pop__close:focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; }
+@media print { .gift-pop { display: none; } }
+
 /* ---------- Chat / contact widget ---------- */
 .chat-fab {
   position: fixed;
