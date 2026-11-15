@@ -234,7 +234,7 @@
   const GIFT_MODAL_ON = true;
   const GIFT_URL = 'https://portal.mosaicclimbing.com/mos/gift-cards/gift-card';
   const GIFT_SNOOZE_DAYS = 30;
-  const GIFT_DELAY_MS = 2500;
+  const GIFT_DELAY_MS = 500;
   const GIFT_KEY = 'mosaic-gift-modal-closed';
   const GIFT_SKIP_PAGES = ['climb-with-us', 'waiver']; // already sells gift cards / redirect page
 
