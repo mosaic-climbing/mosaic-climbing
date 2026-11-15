@@ -231,7 +231,7 @@ When adding dates: edit `HOLIDAY_HOURS`, bump `script.js?v=N`, add matching `spe
 Every HTML file references versioned static asset URLs. Current values (always check live HTML before bumping):
 
 - `styles.css?v=53`
-- `script.js?v=8`
+- `script.js?v=9`
 - `calendar.js?v=5` (only in `calendar.html`)
 - `class-overhang.avif?v=3` / `class-overhang-mobile.avif?v=3` (calendar hero, also referenced in booking.html)
 

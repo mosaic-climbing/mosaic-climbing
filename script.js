@@ -52,13 +52,14 @@
   // Add new dates here; prune past ones whenever convenient. Keep the
   // JSON-LD specialOpeningHoursSpecification + llms.txt in sync.
   const HOLIDAY_HOURS = [
-    { date: '2026-10-12', hours: 'Regular hours' },
     { date: '2026-11-26', hours: 'Closed' },
-    { date: '2026-11-27', hours: '10am — 9pm' },
-    { date: '2026-12-24', hours: 'Closed' },
+    { date: '2026-11-27', hours: '11am — 5pm' },
+    { date: '2026-12-24', hours: '11am — 5pm' },
     { date: '2026-12-25', hours: 'Closed' },
-    { date: '2026-12-31', hours: '10am — 4pm' },
-    { date: '2027-01-01', hours: 'Closed' },
+    { date: '2026-12-26', hours: '11am — 5pm' },
+    { date: '2026-12-27', hours: '11am — 5pm' },
+    { date: '2026-12-31', hours: '11am — 5pm' },
+    { date: '2027-01-01', hours: '11am — 5pm' },
   ];
   const HOLIDAY_LEAD_DAYS = 14;
 
